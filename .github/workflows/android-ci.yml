@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -30,7 +30,17 @@ jobs:
         shell: bash
         run: |
           mkdir -p ci
-          base64 --decode ci/bmax-ci-debug.keystore.b64 > ci/bmax-ci-debug.keystore
+          if [ ! -f ci/bmax-ci-debug.keystore ]; then
+            keytool -genkeypair \
+              -keystore ci/bmax-ci-debug.keystore \
+              -storepass bmaxdebug \
+              -keypass bmaxdebug \
+              -alias bmaxdebug \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Bmax CI Debug, OU=Bmax, O=Bmax, L=Sumedang, ST=West Java, C=ID"
+          fi
           chmod 600 ci/bmax-ci-debug.keystore
           keytool -list -keystore ci/bmax-ci-debug.keystore -storepass bmaxdebug -alias bmaxdebug >/dev/null
 
