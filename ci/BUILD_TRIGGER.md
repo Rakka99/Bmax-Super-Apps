@@ -1,0 +1,1 @@
+CI build trigger for stable installable debug APK.
