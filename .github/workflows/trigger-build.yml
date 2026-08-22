@@ -1,0 +1,2 @@
+# Build trigger marker
+# The Android CI workflow builds on every push to main.
