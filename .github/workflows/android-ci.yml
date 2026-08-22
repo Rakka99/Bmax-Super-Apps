@@ -26,14 +26,31 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Prepare stable CI debug keystore
+        shell: bash
+        run: |
+          mkdir -p ci
+          base64 --decode ci/bmax-ci-debug.keystore.b64 > ci/bmax-ci-debug.keystore
+          chmod 600 ci/bmax-ci-debug.keystore
+          keytool -list -keystore ci/bmax-ci-debug.keystore -storepass bmaxdebug -alias bmaxdebug >/dev/null
+
       - name: Build debug APK
         env:
           ORG_GRADLE_PROJECT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           ORG_GRADLE_PROJECT_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: gradle assembleDebug
+        run: gradle clean assembleDebug
+
+      - name: Verify APK signing and package
+        shell: bash
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK"
+          apksigner verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 3
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bmax-super-apps-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
