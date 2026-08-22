@@ -11,14 +11,33 @@ android {
     namespace = "id.bmax.app"
     compileSdk = 35
 
+    val ciKeystore = rootProject.file("ci/bmax-ci-debug.keystore")
+
+    signingConfigs {
+        create("ciDebug") {
+            storeFile = ciKeystore
+            storePassword = "bmaxdebug"
+            keyAlias = "bmaxdebug"
+            keyPassword = "bmaxdebug"
+        }
+    }
+
     defaultConfig {
         applicationId = "id.bmax.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
         buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${project.findProperty("SUPABASE_PUBLISHABLE_KEY") ?: ""}\"")
+    }
+
+    buildTypes {
+        getByName("debug") {
+            if (ciKeystore.exists()) {
+                signingConfig = signingConfigs.getByName("ciDebug")
+            }
+        }
     }
 
     compileOptions {
