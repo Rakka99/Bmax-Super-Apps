@@ -26,21 +26,20 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Prepare stable CI debug keystore
+      - name: Prepare CI debug keystore
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ci
-          if [ ! -f ci/bmax-ci-debug.keystore ]; then
-            keytool -genkeypair \
-              -keystore ci/bmax-ci-debug.keystore \
-              -storepass bmaxdebug \
-              -keypass bmaxdebug \
-              -alias bmaxdebug \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Bmax CI Debug, OU=Bmax, O=Bmax, L=Sumedang, ST=West Java, C=ID"
-          fi
+          keytool -genkeypair \
+            -keystore ci/bmax-ci-debug.keystore \
+            -storepass bmaxdebug \
+            -keypass bmaxdebug \
+            -alias bmaxdebug \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Bmax CI Debug, OU=Bmax, O=Bmax, L=Sumedang, ST=West Java, C=ID"
           chmod 600 ci/bmax-ci-debug.keystore
           keytool -list -keystore ci/bmax-ci-debug.keystore -storepass bmaxdebug -alias bmaxdebug >/dev/null
 
@@ -48,13 +47,14 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           ORG_GRADLE_PROJECT_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: gradle clean assembleDebug
+        run: gradle clean assembleDebug --no-daemon --stacktrace
 
       - name: Verify APK signing and package
         shell: bash
         run: |
+          set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK"
+          test -s "$APK"
           apksigner verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 3
 
