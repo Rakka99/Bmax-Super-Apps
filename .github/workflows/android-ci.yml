@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -28,6 +28,21 @@ jobs:
         with:
           gradle-version: "8.9"
           cache-disabled: true
+
+      - name: Verify application source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/build.gradle.kts
+          test -f app/src/main/java/id/bmax/app/MainActivity.kt
+          test -f app/src/main/java/id/bmax/app/BmaxApplication.kt
+          test -f app/src/main/java/id/bmax/app/core/di/SupabaseModule.kt
+          test -f app/src/main/java/id/bmax/app/feature/auth/AuthViewModel.kt
+          test -f app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
+          test -f app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
+          test -f app/src/main/java/id/bmax/app/feature/customer/CustomerViewModel.kt
+          test -f app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
+          ! grep -R "bmax-ci-debug.keystore\|base64 --decode\|bmax-ci-debug.keystore.b64" .github/workflows app/src/main app/build.gradle.kts
 
       - name: Build debug APK
         env:
