@@ -29,24 +29,6 @@ jobs:
           gradle-version: "8.9"
           cache-disabled: false
 
-      - name: Prepare CI debug keystore
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ci
-          rm -f ci/bmax-ci-debug.keystore
-          keytool -genkeypair \
-            -keystore ci/bmax-ci-debug.keystore \
-            -storepass bmaxdebug \
-            -keypass bmaxdebug \
-            -alias bmaxdebug \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Bmax CI Debug, OU=Bmax, O=Bmax, L=Sumedang, ST=West Java, C=ID"
-          chmod 600 ci/bmax-ci-debug.keystore
-          keytool -list -keystore ci/bmax-ci-debug.keystore -storepass bmaxdebug -alias bmaxdebug >/dev/null
-
       - name: Build debug APK
         env:
           ORG_GRADLE_PROJECT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
