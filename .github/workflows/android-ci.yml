@@ -14,7 +14,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout
+      - name: Checkout latest application
         uses: actions/checkout@v5
 
       - name: Set up JDK 17
@@ -29,19 +29,27 @@ jobs:
           gradle-version: "8.9"
           cache-disabled: true
 
-      - name: Verify application source
+      - name: Verify latest application and UI implementation
         shell: bash
         run: |
           set -euo pipefail
-          test -f app/build.gradle.kts
-          test -f app/src/main/java/id/bmax/app/MainActivity.kt
-          test -f app/src/main/java/id/bmax/app/BmaxApplication.kt
-          test -f app/src/main/java/id/bmax/app/core/di/SupabaseModule.kt
-          test -f app/src/main/java/id/bmax/app/feature/auth/AuthViewModel.kt
-          test -f app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
-          test -f app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
-          test -f app/src/main/java/id/bmax/app/feature/customer/CustomerViewModel.kt
-          test -f app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
+          files=(
+            app/build.gradle.kts
+            app/src/main/java/id/bmax/app/MainActivity.kt
+            app/src/main/java/id/bmax/app/BmaxApplication.kt
+            app/src/main/java/id/bmax/app/core/di/SupabaseModule.kt
+            app/src/main/java/id/bmax/app/core/ui/Theme.kt
+            app/src/main/java/id/bmax/app/feature/auth/AuthViewModel.kt
+            app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
+            app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
+            app/src/main/java/id/bmax/app/feature/customer/CustomerViewModel.kt
+            app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
+          )
+          for f in "${files[@]}"; do test -s "$f"; done
+          grep -q "fun BmaxTheme" app/src/main/java/id/bmax/app/core/ui/Theme.kt
+          grep -q "RoundedCornerShape" app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
+          grep -q "RoundedCornerShape" app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
+          grep -q 'supabase.from("customers")' app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
           ! grep -R "bmax-ci-debug.keystore\|base64 --decode\|bmax-ci-debug.keystore.b64" .github/workflows app/src/main app/build.gradle.kts
 
       - name: Build debug APK
@@ -50,17 +58,16 @@ jobs:
           ORG_GRADLE_PROJECT_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: gradle clean assembleDebug --no-daemon --stacktrace --no-build-cache
 
-      - name: Locate and verify APK
+      - name: Verify APK
         shell: bash
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           ls -lh "$APK"
-          command -v apksigner >/dev/null
           apksigner verify --verbose "$APK"
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: bmax-super-apps-debug-apk
