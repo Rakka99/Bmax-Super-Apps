@@ -20,7 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit) {
+fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap: (CustomerDto) -> Unit) {
     val customers by viewModel.customers.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -33,7 +33,7 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit) {
         Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surface))).padding(padding).padding(horizontal = 16.dp)) {
             OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), label = { Text("Cari IDPEL / nama") }, singleLine = true, shape = RoundedCornerShape(18.dp))
             if (loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
-            if (error != null) Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
+            error?.let { message -> Text(message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp)) }
             Text("${filtered.size} pelanggan", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(filtered, key = { it.id }) { c ->
@@ -46,6 +46,7 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit) {
                             HorizontalDivider(Modifier.padding(vertical = 5.dp))
                             Text("Tagihan: Rp ${c.currentBill}")
                             Text("Tunggakan: Rp ${c.arrearsTotal}")
+                            TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) { Text(if (c.latitude != null && c.longitude != null) "Lihat Peta Pelanggan" else "Koordinat belum tersedia") }
                         }
                     }
                 }
