@@ -18,11 +18,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit) {
-    val customers = viewModel.customers.collectAsStateWithLifecycle().value
-    val loading = viewModel.loading.collectAsStateWithLifecycle().value
-    val error = viewModel.error.collectAsStateWithLifecycle().value
+    val customers by viewModel.customers.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
     val filtered = if (search.isBlank()) customers else customers.filter { it.idpel.contains(search, true) || it.name.contains(search, true) }
     val glassShape = RoundedCornerShape(22.dp)
