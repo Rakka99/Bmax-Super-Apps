@@ -22,6 +22,7 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"$supabaseKey\"")
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsKey\"")
+        manifestPlaceholders["MAPS_API_KEY"] = mapsKey
     }
     buildTypes { getByName("debug") { } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
