@@ -1,17 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <application
-        android:name=".BmaxApplication"
-        android:allowBackup="false"
-        android:label="Bmax Super Apps"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.Bmax">
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+    <application android:name=".BmaxApplication" android:allowBackup="false" android:label="Bmax Super Apps" android:supportsRtl="true" android:theme="@style/Theme.Bmax">
+        <meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
