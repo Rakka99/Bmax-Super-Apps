@@ -49,23 +49,54 @@ jobs:
           for f in "${files[@]}"; do test -s "$f"; done
           grep -q 'com.google.android.geo.API_KEY' app/src/main/AndroidManifest.xml
           grep -q 'MAPS_API_KEY' app/build.gradle.kts
+          grep -q 'manifestPlaceholders' app/build.gradle.kts
           grep -q 'play-services-maps' app/build.gradle.kts
           grep -q 'maps-compose' app/build.gradle.kts
           grep -q 'supabase.from("customers")' app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
           grep -q 'RoundedCornerShape' app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
           grep -q 'RoundedCornerShape' app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
           grep -q 'GoogleMap' app/src/main/java/id/bmax/app/feature/map/CustomerMapScreen.kt
-          # Check application/workflow inputs only; do not scan this workflow itself.
           if grep -R -n -E 'bmax-ci-debug\.keystore|base64 --decode|bmax-ci-debug\.keystore\.b64' app/src/main app/build.gradle.kts; then
             echo 'ERROR: obsolete CI keystore configuration found in application sources.'
             exit 1
           fi
 
-      - name: Build debug APK
+      - name: Prepare build secrets
+        shell: bash
         env:
-          ORG_GRADLE_PROJECT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          ORG_GRADLE_PROJECT_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          ORG_GRADLE_PROJECT_MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          SUPABASE_URL_SECRET: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY_SECRET: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          MAPS_KEY_SECRET: ${{ secrets.MAPS_API_KEY }}
+          GOOGLE_MAPS_KEY_SECRET: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          set -euo pipefail
+          maps_key="${MAPS_KEY_SECRET:-}"
+          if [ -z "$maps_key" ]; then maps_key="${GOOGLE_MAPS_KEY_SECRET:-}"; fi
+          if [ -z "$maps_key" ]; then
+            echo "ERROR: Google Maps secret is unavailable. Add repository secret MAPS_API_KEY."
+            exit 1
+          fi
+          if [ -z "${SUPABASE_URL_SECRET:-}" ]; then
+            echo "ERROR: SUPABASE_URL repository secret is unavailable."
+            exit 1
+          fi
+          if [ -z "${SUPABASE_KEY_SECRET:-}" ]; then
+            echo "ERROR: SUPABASE_PUBLISHABLE_KEY repository secret is unavailable."
+            exit 1
+          fi
+          {
+            echo "ORG_GRADLE_PROJECT_SUPABASE_URL<<EOF"
+            echo "$SUPABASE_URL_SECRET"
+            echo "EOF"
+            echo "ORG_GRADLE_PROJECT_SUPABASE_PUBLISHABLE_KEY<<EOF"
+            echo "$SUPABASE_KEY_SECRET"
+            echo "EOF"
+            echo "ORG_GRADLE_PROJECT_MAPS_API_KEY<<EOF"
+            echo "$maps_key"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Build debug APK
         run: gradle clean assembleDebug --no-daemon --stacktrace --no-build-cache
 
       - name: Verify APK
