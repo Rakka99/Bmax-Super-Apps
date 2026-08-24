@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,9 +19,7 @@ sealed interface AuthState {
 }
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(
-    private val supabase: SupabaseClient,
-) : ViewModel() {
+class AuthViewModel @Inject constructor(private val supabase: SupabaseClient) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
     val state: StateFlow<AuthState> = _state
     private val _email = MutableStateFlow("")
@@ -41,29 +40,17 @@ class AuthViewModel @Inject constructor(
 
     fun signIn() {
         val emailValue = _email.value.trim()
-        if (emailValue.isBlank() || _password.value.isBlank()) {
-            _state.value = AuthState.Error("Email dan password wajib diisi.")
-            return
-        }
+        val passwordValue = _password.value
+        if (emailValue.isBlank() || passwordValue.isBlank()) { _state.value = AuthState.Error("Email dan password wajib diisi."); return }
         viewModelScope.launch {
             _state.value = AuthState.Loading
-            runCatching {
-                supabase.auth.signInWith(Email) {
-                    email = emailValue
-                    password = _password.value
-                }
-            }.onSuccess {
-                _state.value = AuthState.SignedIn(supabase.auth.currentSessionOrNull()?.user?.email)
-            }.onFailure { error ->
-                _state.value = AuthState.Error(error.message ?: "Login gagal.")
-            }
+            runCatching { supabase.auth.signInWith(Email) { email = emailValue; password = passwordValue } }
+                .onSuccess { _state.value = AuthState.SignedIn(supabase.auth.currentSessionOrNull()?.user?.email) }
+                .onFailure { _state.value = AuthState.Error(it.message ?: "Login gagal.") }
         }
     }
 
     fun signOut() {
-        viewModelScope.launch {
-            runCatching { supabase.auth.signOut() }
-            _state.value = AuthState.SignedOut
-        }
+        viewModelScope.launch { runCatching { supabase.auth.signOut() }; _state.value = AuthState.SignedOut }
     }
 }
