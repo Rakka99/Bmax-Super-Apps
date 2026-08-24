@@ -51,7 +51,7 @@ Do not use a Supabase service-role/secret key from Android. Server-only IAK cred
 
 ## GitHub Actions
 
-The workflow at `.github/workflows/android-ci.yml` builds a debug APK on pushes and pull requests to `main`.
+The workflow at `.github/workflows/android-ci.yml` builds a debug APK on pushes and pull requests to `main`. It uses JDK 17 and Gradle 8.9, matching the Android Gradle Plugin 8.7.3 configuration.
 
 Optional repository secrets can override the built-in publishable configuration:
 - `SUPABASE_URL`
@@ -67,6 +67,8 @@ gradle assembleDebug
 
 ## Current scope
 
-The repository now contains the live Supabase compatibility layer and build configuration. Production work still includes complete feature modules, Auth UI/session flow, Apps Script adapter, IAK Edge Functions, payment state machine/idempotency tests, printer/PDF, Maps, FCM, and release signing.
+The repository now contains the live Supabase compatibility layer, Auth/customer client integration, and CI build configuration. Production work still includes complete feature modules, Apps Script adapter, IAK Edge Functions, payment state machine/idempotency tests, printer/PDF, Maps, FCM, and release signing.
 
 Target repository: https://github.com/Rakka99/Bmax-Super-Apps.git
+
+CI checkpoint: 2026-08-24 — debug APK build uses Android's standard debug signing; no custom keystore is required.
