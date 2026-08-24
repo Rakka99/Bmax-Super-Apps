@@ -27,22 +27,23 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.9"
-          cache-disabled: false
+          cache-disabled: true
 
       - name: Build debug APK
         env:
           ORG_GRADLE_PROJECT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           ORG_GRADLE_PROJECT_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: gradle --version && gradle clean assembleDebug --no-daemon --stacktrace
+        run: gradle clean assembleDebug --no-daemon --stacktrace --no-build-cache
 
-      - name: Verify APK signing and package
+      - name: Locate and verify APK
         shell: bash
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
+          ls -lh "$APK"
+          command -v apksigner >/dev/null
           apksigner verify --verbose "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 3
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
