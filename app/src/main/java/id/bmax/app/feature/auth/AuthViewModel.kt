@@ -34,7 +34,7 @@ class AuthViewModel @Inject constructor(
 
     fun refreshSession() {
         viewModelScope.launch {
-            val session = runCatching { supabase.gotrue.currentSessionOrNull() }.getOrNull()
+            val session = runCatching { supabase.auth.currentSessionOrNull() }.getOrNull()
             _state.value = if (session == null) AuthState.SignedOut else AuthState.SignedIn(session.user?.email)
         }
     }
@@ -48,12 +48,12 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = AuthState.Loading
             runCatching {
-                supabase.gotrue.loginWith(Email) {
+                supabase.auth.signInWith(Email) {
                     email = emailValue
                     password = _password.value
                 }
             }.onSuccess {
-                _state.value = AuthState.SignedIn(supabase.gotrue.currentSessionOrNull()?.user?.email)
+                _state.value = AuthState.SignedIn(supabase.auth.currentSessionOrNull()?.user?.email)
             }.onFailure { error ->
                 _state.value = AuthState.Error(error.message ?: "Login gagal.")
             }
@@ -62,7 +62,7 @@ class AuthViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
-            runCatching { supabase.gotrue.logout() }
+            runCatching { supabase.auth.signOut() }
             _state.value = AuthState.SignedOut
         }
     }
