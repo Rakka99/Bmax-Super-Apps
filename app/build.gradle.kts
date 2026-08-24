@@ -11,17 +11,6 @@ android {
     namespace = "id.bmax.app"
     compileSdk = 35
 
-    val ciKeystore = rootProject.file("ci/bmax-ci-debug.keystore")
-
-    signingConfigs {
-        create("ciDebug") {
-            storeFile = ciKeystore
-            storePassword = "bmaxdebug"
-            keyAlias = "bmaxdebug"
-            keyPassword = "bmaxdebug"
-        }
-    }
-
     defaultConfig {
         applicationId = "id.bmax.app"
         minSdk = 26
@@ -29,9 +18,6 @@ android {
         versionCode = 2
         versionName = "1.0.1"
 
-        // Publishable keys are intended for public client applications.
-        // RLS + Supabase Auth remain the actual authorization boundary.
-        // CI/local properties override these values when supplied.
         val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString()
             ?.takeIf { it.isNotBlank() }
             ?: "https://vgnynrzhanfnbifjedga.supabase.co"
@@ -45,9 +31,8 @@ android {
 
     buildTypes {
         getByName("debug") {
-            if (ciKeystore.exists()) {
-                signingConfig = signingConfigs.getByName("ciDebug")
-            }
+            // Use Android Gradle Plugin's standard debug signing in CI/local builds.
+            // No repository keystore is required.
         }
     }
 
@@ -102,7 +87,6 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:auth-kt:3.1.1")
     implementation("io.github.jan-tennert.supabase:realtime-kt:3.1.1")
     implementation("io.github.jan-tennert.supabase:storage-kt:3.1.1")
-
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
