@@ -28,8 +28,19 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "1.0.1"
-        buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
-        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${project.findProperty("SUPABASE_PUBLISHABLE_KEY") ?: ""}\"")
+
+        // Publishable keys are intended for public client applications.
+        // RLS + Supabase Auth remain the actual authorization boundary.
+        // CI/local properties override these values when supplied.
+        val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString()
+            ?.takeIf { it.isNotBlank() }
+            ?: "https://vgnynrzhanfnbifjedga.supabase.co"
+        val supabasePublishableKey = project.findProperty("SUPABASE_PUBLISHABLE_KEY")?.toString()
+            ?.takeIf { it.isNotBlank() }
+            ?: "sb_publishable_FKY813O7fTHx2x5SfeZraw_FQWn0qLI"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"$supabasePublishableKey\"")
     }
 
     buildTypes {
