@@ -22,51 +22,52 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun AuthScreen(viewModel: AuthViewModel) {
-    val email by viewModel.email.collectAsStateWithLifecycle()
+    val identifier by viewModel.identifier.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
+    val loginRole by viewModel.loginRole.collectAsStateWithLifecycle()
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    val busy = state is AuthState.Loading
     val glassShape = RoundedCornerShape(30.dp)
-    val busy: Boolean = state is AuthState.Loading
+    val isBiller = loginRole == LoginRole.BILLER
 
     Box(
-        Modifier
-            .fillMaxSize()
-            .background(Brush.linearGradient(listOf(Color(0xFFEAF4FF), Color(0xFFDCEBFF), Color(0xFFF5EEFF))))
+        Modifier.fillMaxSize()
+            .background(Brush.linearGradient(listOf(Color(0xFF081326), Color(0xFF111A31), Color(0xFF081326))))
             .padding(18.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
-            Modifier
-                .fillMaxWidth()
+            Modifier.fillMaxWidth()
                 .clip(glassShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.76f))
-                .border(1.dp, Color.White.copy(alpha = 0.75f), glassShape)
+                .background(Color(0xFF20283A).copy(alpha = 0.94f))
+                .border(1.dp, Color.White.copy(alpha = 0.20f), glassShape)
                 .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Bmax Super Apps", style = MaterialTheme.typography.headlineMedium)
-            Text(
-                when (mode) {
-                    AuthMode.LOGIN -> "Login Biller"
-                    AuthMode.SIGN_UP -> "Daftar Akun"
-                    AuthMode.FORGOT_PASSWORD -> "Lupa Password"
-                },
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("BMAX PLN", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            Text("Biller Management & Execution SuperApp", color = Color.LightGray)
+            Spacer(Modifier.height(20.dp))
 
-            Spacer(Modifier.height(22.dp))
+            if (mode == AuthMode.LOGIN) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RoleButton("ADMIN", LoginRole.ADMIN, loginRole, busy) { viewModel.setLoginRole(it) }
+                    RoleButton("SUPERVISOR", LoginRole.SUPERVISOR, loginRole, busy) { viewModel.setLoginRole(it) }
+                    RoleButton("BILLER", LoginRole.BILLER, loginRole, busy) { viewModel.setLoginRole(it) }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
 
             OutlinedTextField(
-                value = email,
-                onValueChange = viewModel::onEmailChanged,
+                value = identifier,
+                onValueChange = viewModel::onIdentifierChanged,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Email") },
-                placeholder = { Text("nama@email.com") },
+                label = { Text(if (isBiller) "Username Biller" else "Email") },
+                placeholder = { Text(if (isBiller) "contoh: 53511.wildan" else "admin@contoh.id") },
                 singleLine = true,
-                enabled = busy == false,
-                shape = RoundedCornerShape(20.dp)
+                enabled = !busy,
+                shape = RoundedCornerShape(18.dp),
             )
 
             if (mode != AuthMode.FORGOT_PASSWORD) {
@@ -74,14 +75,14 @@ fun AuthScreen(viewModel: AuthViewModel) {
                     value = password,
                     onValueChange = viewModel::onPasswordChanged,
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    label = { Text("Password") },
-                    placeholder = { Text("Minimal 6 karakter") },
+                    label = { Text("Kata Sandi") },
+                    placeholder = { Text(if (isBiller) "Password default: biller" else "Password akun") },
                     singleLine = true,
-                    enabled = busy == false,
-                    shape = RoundedCornerShape(20.dp),
+                    enabled = !busy,
+                    shape = RoundedCornerShape(18.dp),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = passwordVisible == false }, enabled = busy == false) {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }, enabled = !busy) {
                             Icon(
                                 if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 "Tampilkan password"
@@ -95,13 +96,11 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 is AuthState.Error -> Text(
                     (state as AuthState.Error).message,
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
                 )
                 is AuthState.Info -> Text(
                     (state as AuthState.Info).message,
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
                 )
                 else -> Unit
@@ -109,39 +108,44 @@ fun AuthScreen(viewModel: AuthViewModel) {
 
             Button(
                 modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(54.dp),
-                enabled = busy == false,
+                enabled = !busy,
                 onClick = viewModel::submit,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(18.dp)
             ) {
                 if (busy) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                else Text(
-                    when (mode) {
-                        AuthMode.LOGIN -> "Masuk"
-                        AuthMode.SIGN_UP -> "Daftar"
-                        AuthMode.FORGOT_PASSWORD -> "Kirim Link Reset"
-                    }
-                )
+                else Text(if (mode == AuthMode.LOGIN) "MASUK" else if (mode == AuthMode.SIGN_UP) "DAFTAR" else "KIRIM LINK RESET")
             }
 
             if (mode == AuthMode.LOGIN) {
-                TextButton(enabled = busy == false, onClick = { viewModel.setMode(AuthMode.FORGOT_PASSWORD) }) {
-                    Text("Lupa password?")
-                }
-                OutlinedButton(
-                    enabled = busy == false,
-                    onClick = { viewModel.setMode(AuthMode.SIGN_UP) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Text("Belum punya akun? Daftar")
+                TextButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.FORGOT_PASSWORD) }) { Text("Lupa Password?") }
+                if (!isBiller) {
+                    OutlinedButton(
+                        enabled = !busy,
+                        onClick = { viewModel.setMode(AuthMode.SIGN_UP) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp)
+                    ) { Text("Daftar akun Admin/Supervisor") }
                 }
             } else {
-                TextButton(enabled = busy == false, onClick = { viewModel.setMode(AuthMode.LOGIN) }) {
-                    Text("Kembali ke Login")
-                }
+                TextButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.LOGIN) }) { Text("Kembali ke Login") }
             }
 
-            Text("Akses menggunakan Supabase Authentication", style = MaterialTheme.typography.labelSmall)
+            Text("Supabase Auth • Akun wajib terdaftar dan aktif", color = Color.LightGray, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
         }
     }
+}
+
+@Composable
+private fun RoleButton(label: String, role: LoginRole, selected: LoginRole, enabled: Boolean, onClick: (LoginRole) -> Unit) {
+    Button(
+        onClick = { onClick(role) },
+        enabled = enabled,
+        modifier = Modifier.weight(1f),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected == role) MaterialTheme.colorScheme.primary else Color(0xFF303746),
+            contentColor = Color.White
+        )
+    ) { Text(label, style = MaterialTheme.typography.labelMedium) }
 }
