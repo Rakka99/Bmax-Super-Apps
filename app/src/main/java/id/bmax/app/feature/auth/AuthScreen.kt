@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,8 +28,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val glassShape = RoundedCornerShape(30.dp)
-    val busy = state is AuthState.Loading
-    val isInfo = state is AuthState.Info
+    val busy: Boolean = state is AuthState.Loading
 
     Box(
         Modifier
@@ -65,7 +65,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 label = { Text("Email") },
                 placeholder = { Text("nama@email.com") },
                 singleLine = true,
-                enabled = !busy,
+                enabled = busy == false,
                 shape = RoundedCornerShape(20.dp)
             )
 
@@ -77,12 +77,15 @@ fun AuthScreen(viewModel: AuthViewModel) {
                     label = { Text("Password") },
                     placeholder = { Text("Minimal 6 karakter") },
                     singleLine = true,
-                    enabled = !busy,
+                    enabled = busy == false,
                     shape = RoundedCornerShape(20.dp),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }, enabled = !busy) {
-                            Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Tampilkan password")
+                        IconButton(onClick = { passwordVisible = passwordVisible == false }, enabled = busy == false) {
+                            Icon(
+                                if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                "Tampilkan password"
+                            )
                         }
                     }
                 )
@@ -106,7 +109,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
 
             Button(
                 modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(54.dp),
-                enabled = !busy,
+                enabled = busy == false,
                 onClick = viewModel::submit,
                 shape = RoundedCornerShape(20.dp)
             ) {
@@ -121,19 +124,23 @@ fun AuthScreen(viewModel: AuthViewModel) {
             }
 
             if (mode == AuthMode.LOGIN) {
-                TextButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.FORGOT_PASSWORD) }) {
+                TextButton(enabled = busy == false, onClick = { viewModel.setMode(AuthMode.FORGOT_PASSWORD) }) {
                     Text("Lupa password?")
                 }
-                OutlinedButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.SIGN_UP) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                OutlinedButton(
+                    enabled = busy == false,
+                    onClick = { viewModel.setMode(AuthMode.SIGN_UP) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
                     Text("Belum punya akun? Daftar")
                 }
             } else {
-                TextButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.LOGIN) }) {
+                TextButton(enabled = busy == false, onClick = { viewModel.setMode(AuthMode.LOGIN) }) {
                     Text("Kembali ke Login")
                 }
             }
 
-            if (isInfo) Spacer(Modifier.height(4.dp))
             Text("Akses menggunakan Supabase Authentication", style = MaterialTheme.typography.labelSmall)
         }
     }
