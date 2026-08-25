@@ -136,7 +136,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
 }
 
 @Composable
-private fun RoleButton(label: String, role: LoginRole, selected: LoginRole, enabled: Boolean, onClick: (LoginRole) -> Unit) {
+private fun RowScope.RoleButton(label: String, role: LoginRole, selected: LoginRole, enabled: Boolean, onClick: (LoginRole) -> Unit) {
     Button(
         onClick = { onClick(role) },
         enabled = enabled,
