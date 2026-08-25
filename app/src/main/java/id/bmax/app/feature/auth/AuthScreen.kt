@@ -4,102 +4,137 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun AuthScreen(viewModel: AuthViewModel) {
-    val email = viewModel.email.collectAsStateWithLifecycle().value
-    val password = viewModel.password.collectAsStateWithLifecycle().value
-    val state = viewModel.state.collectAsStateWithLifecycle().value
-    val shape = RoundedCornerShape(28.dp)
+    val email by viewModel.email.collectAsStateWithLifecycle()
+    val password by viewModel.password.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val mode by viewModel.mode.collectAsStateWithLifecycle()
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    val glassShape = RoundedCornerShape(30.dp)
+    val busy = state is AuthState.Loading
+    val isInfo = state is AuthState.Info
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    listOf(Color(0xFFEAF4FF), Color(0xFFD8F4FF), Color(0xFFF4EEFF))
-                )
-            )
-            .padding(20.dp),
+            .background(Brush.linearGradient(listOf(Color(0xFFEAF4FF), Color(0xFFDCEBFF), Color(0xFFF5EEFF))))
+            .padding(18.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f))
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
-                    shape
-                )
-                .padding(24.dp),
+                .clip(glassShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.76f))
+                .border(1.dp, Color.White.copy(alpha = 0.75f), glassShape)
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Bmax Super Apps", style = MaterialTheme.typography.headlineMedium)
-            Text("Login Biller", style = MaterialTheme.typography.titleMedium)
+            Text(
+                when (mode) {
+                    AuthMode.LOGIN -> "Login Biller"
+                    AuthMode.SIGN_UP -> "Daftar Akun"
+                    AuthMode.FORGOT_PASSWORD -> "Lupa Password"
+                },
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(Modifier.height(22.dp))
 
             OutlinedTextField(
                 value = email,
                 onValueChange = viewModel::onEmailChanged,
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
                 label = { Text("Email") },
+                placeholder = { Text("nama@email.com") },
                 singleLine = true,
-                enabled = state !is AuthState.Loading,
-                shape = RoundedCornerShape(18.dp)
+                enabled = !busy,
+                shape = RoundedCornerShape(20.dp)
             )
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = viewModel::onPasswordChanged,
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                label = { Text("Password") },
-                singleLine = true,
-                enabled = state !is AuthState.Loading,
-                shape = RoundedCornerShape(18.dp),
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            if (state is AuthState.Error) {
-                Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
+            if (mode != AuthMode.FORGOT_PASSWORD) {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = viewModel::onPasswordChanged,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    label = { Text("Password") },
+                    placeholder = { Text("Minimal 6 karakter") },
+                    singleLine = true,
+                    enabled = !busy,
+                    shape = RoundedCornerShape(20.dp),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }, enabled = !busy) {
+                            Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Tampilkan password")
+                        }
+                    }
                 )
             }
 
+            when (state) {
+                is AuthState.Error -> Text(
+                    (state as AuthState.Error).message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                )
+                is AuthState.Info -> Text(
+                    (state as AuthState.Info).message,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                )
+                else -> Unit
+            }
+
             Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp)
-                    .height(52.dp),
-                enabled = state !is AuthState.Loading,
-                onClick = viewModel::signIn,
-                shape = RoundedCornerShape(18.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(54.dp),
+                enabled = !busy,
+                onClick = viewModel::submit,
+                shape = RoundedCornerShape(20.dp)
             ) {
-                if (state is AuthState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Masuk")
+                if (busy) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                else Text(
+                    when (mode) {
+                        AuthMode.LOGIN -> "Masuk"
+                        AuthMode.SIGN_UP -> "Daftar"
+                        AuthMode.FORGOT_PASSWORD -> "Kirim Link Reset"
+                    }
+                )
+            }
+
+            if (mode == AuthMode.LOGIN) {
+                TextButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.FORGOT_PASSWORD) }) {
+                    Text("Lupa password?")
+                }
+                OutlinedButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.SIGN_UP) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                    Text("Belum punya akun? Daftar")
+                }
+            } else {
+                TextButton(enabled = !busy, onClick = { viewModel.setMode(AuthMode.LOGIN) }) {
+                    Text("Kembali ke Login")
                 }
             }
+
+            if (isInfo) Spacer(Modifier.height(4.dp))
+            Text("Akses menggunakan Supabase Authentication", style = MaterialTheme.typography.labelSmall)
         }
     }
 }
