@@ -122,8 +122,8 @@ class AuthViewModel @Inject constructor(private val supabase: SupabaseClient) : 
         viewModelScope.launch {
             _state.value = AuthState.Loading
             try {
-                supabase.auth.sendRecoveryEmail(email = emailValue)
-                _state.value = AuthState.Info("Email reset password telah diminta. Periksa inbox/spam email Anda.")
+                supabase.auth.resetPasswordForEmail(emailValue)
+                _state.value = AuthState.Info("Email reset password telah dikirim. Periksa inbox/spam email Anda.")
                 _mode.value = AuthMode.LOGIN
             } catch (t: Throwable) {
                 _state.value = AuthState.Error(toUserMessage(t))
@@ -173,8 +173,7 @@ class AuthViewModel @Inject constructor(private val supabase: SupabaseClient) : 
     }
 
     private fun toUserMessage(t: Throwable): String {
-        val raw = t.message.orEmpty()
-        val normalized = raw.lowercase()
+        val normalized = t.message.orEmpty().lowercase()
         return when {
             "invalid_credentials" in normalized || "invalid login credentials" in normalized ->
                 "Email atau password salah. Pastikan akun sudah terdaftar di Supabase Authentication."
