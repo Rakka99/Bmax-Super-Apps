@@ -93,7 +93,7 @@ class AuthViewModel @Inject constructor(private val supabase: SupabaseClient) : 
         viewModelScope.launch {
             _state.value = AuthState.Loading
             try {
-                val result = supabase.auth.signUpWith(Email) {
+                supabase.auth.signUpWith(Email) {
                     email = emailValue
                     password = passwordValue
                 }
@@ -122,7 +122,7 @@ class AuthViewModel @Inject constructor(private val supabase: SupabaseClient) : 
         viewModelScope.launch {
             _state.value = AuthState.Loading
             try {
-                supabase.auth.resetPasswordForEmail(emailValue)
+                supabase.auth.sendRecoveryEmail(email = emailValue)
                 _state.value = AuthState.Info("Email reset password telah diminta. Periksa inbox/spam email Anda.")
                 _mode.value = AuthMode.LOGIN
             } catch (t: Throwable) {
@@ -152,7 +152,6 @@ class AuthViewModel @Inject constructor(private val supabase: SupabaseClient) : 
                 AuthState.SignedIn(email, profile?.role ?: "BILLER")
             }
         }.getOrElse {
-            // Authentication remains valid even if the optional profile row is not yet available.
             AuthState.SignedIn(email, "BILLER")
         }
     }
