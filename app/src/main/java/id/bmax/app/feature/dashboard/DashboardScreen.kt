@@ -1,7 +1,6 @@
 package id.bmax.app.feature.dashboard
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -11,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -19,6 +17,7 @@ import id.bmax.app.core.ui.GlassCard
 import id.bmax.app.feature.customer.CustomerViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: CustomerViewModel,
@@ -66,12 +65,14 @@ fun DashboardScreen(
             }
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(listOf(
-                    "Pelanggan" to customers.size.toString(),
-                    "Lunas" to paid.toString(),
-                    "Belum Lunas" to unpaid.toString(),
-                    "Collection" to "$collection%"
-                )) { (label, value) ->
+                items(
+                    listOf(
+                        "Pelanggan" to customers.size.toString(),
+                        "Lunas" to paid.toString(),
+                        "Belum Lunas" to unpaid.toString(),
+                        "Collection" to "$collection%"
+                    )
+                ) { (label, value) ->
                     GlassCard(Modifier.width(165.dp)) {
                         Text(label, style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.height(6.dp))
@@ -90,7 +91,12 @@ fun DashboardScreen(
                     Text(if (loading) "Memuat data..." else "Refresh Data")
                 }
                 error?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
             }
 
