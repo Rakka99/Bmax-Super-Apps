@@ -2,6 +2,7 @@ package id.bmax.app.feature.customer
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -25,5 +26,11 @@ data class CustomerDto(
 )
 
 class CustomerRepository @Inject constructor(private val supabase: SupabaseClient) {
-    suspend fun getCustomers(): List<CustomerDto> = supabase.from("customers").select().decodeList<CustomerDto>()
+    suspend fun getCustomers(): List<CustomerDto> = supabase
+        .from("customers")
+        .select {
+            order("name", Order.ASCENDING)
+            order("idpel", Order.ASCENDING)
+        }
+        .decodeList<CustomerDto>()
 }
