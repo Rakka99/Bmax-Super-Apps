@@ -1,2 +1,11 @@
-# Build trigger marker
-# The Android CI workflow builds on every push to main.
+name: Obsolete Build Trigger
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disabled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Informational only
+        run: echo "Use Android CI for the Bmax Super Apps build."
