@@ -3,6 +3,7 @@ package id.bmax.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,6 +23,7 @@ import id.bmax.app.feature.auth.AuthViewModel
 import id.bmax.app.feature.customer.CustomerDto
 import id.bmax.app.feature.customer.CustomerScreen
 import id.bmax.app.feature.customer.CustomerViewModel
+import id.bmax.app.feature.dashboard.DashboardScreen
 import id.bmax.app.feature.map.CustomerMapScreen
 
 @AndroidEntryPoint
@@ -32,17 +34,36 @@ class MainActivity : ComponentActivity() {
             BmaxTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val authState by authViewModel.state.collectAsStateWithLifecycle()
+                var showCustomers by remember { mutableStateOf(false) }
                 var selectedCustomer by remember { mutableStateOf<CustomerDto?>(null) }
-                when (authState) {
+
+                when (val state = authState) {
                     AuthState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                    AuthState.SignedOut, is AuthState.Error -> AuthScreen(authViewModel)
+                    AuthState.SignedOut, is AuthState.Error, is AuthState.Info -> AuthScreen(authViewModel)
                     is AuthState.SignedIn -> {
-                        if (selectedCustomer == null) {
-                            val customerViewModel: CustomerViewModel = hiltViewModel()
-                            CustomerScreen(customerViewModel, authViewModel::signOut) { selectedCustomer = it }
-                        } else {
-                            val customer = selectedCustomer!!
-                            CustomerMapScreen(customer.name, customer.latitude, customer.longitude) { selectedCustomer = null }
+                        val customerViewModel: CustomerViewModel = hiltViewModel()
+
+                        when {
+                            selectedCustomer != null -> {
+                                BackHandler { selectedCustomer = null }
+                                val customer = selectedCustomer!!
+                                CustomerMapScreen(customer.name, customer.latitude, customer.longitude) {
+                                    selectedCustomer = null
+                                }
+                            }
+                            showCustomers -> {
+                                BackHandler { showCustomers = false }
+                                CustomerScreen(customerViewModel, authViewModel::signOut) { selectedCustomer = it }
+                            }
+                            else -> {
+                                DashboardScreen(
+                                    viewModel = customerViewModel,
+                                    email = state.email,
+                                    role = state.role,
+                                    onCustomers = { showCustomers = true },
+                                    onLogout = authViewModel::signOut
+                                )
+                            }
                         }
                     }
                 }
