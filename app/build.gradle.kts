@@ -14,9 +14,9 @@ android {
         applicationId = "id.bmax.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.2"
-        val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString()?.takeIf { it.isNotBlank() } ?: "https://vgnynrzhanfnbifjedga.supabase.co"
+        versionCode = 4
+        versionName = "1.1.0"
+        val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString()?.takeIf { it.isNotBlank() } ?: ""
         val supabaseKey = project.findProperty("SUPABASE_PUBLISHABLE_KEY")?.toString()?.takeIf { it.isNotBlank() } ?: ""
         val mapsKey = project.findProperty("MAPS_API_KEY")?.toString()?.takeIf { it.isNotBlank() } ?: ""
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
@@ -40,6 +40,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui"); implementation("androidx.compose.ui:ui-tooling-preview"); debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.room:room-runtime:2.6.1"); implementation("androidx.room:room-ktx:2.6.1"); ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.datastore:datastore-preferences:1.1.2")
