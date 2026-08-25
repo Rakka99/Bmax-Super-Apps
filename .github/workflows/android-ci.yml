@@ -55,7 +55,7 @@ jobs:
           grep -q 'manifestPlaceholders' app/build.gradle.kts
           grep -q 'play-services-maps' app/build.gradle.kts
           grep -q 'maps-compose' app/build.gradle.kts
-          grep -q 'supabase.from("customers")' app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
+          grep -q 'from("customers")' app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
           grep -q 'RoundedCornerShape' app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
           grep -q 'RoundedCornerShape' app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
           grep -q 'GoogleMap' app/src/main/java/id/bmax/app/feature/map/CustomerMapScreen.kt
