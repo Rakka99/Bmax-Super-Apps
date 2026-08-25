@@ -25,19 +25,75 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
-    val filtered = if (search.isBlank()) customers else customers.filter { it.idpel.contains(search, true) || it.name.contains(search, true) }
+    val filtered = if (search.isBlank()) customers else customers.filter {
+        it.idpel.contains(search, true) || it.name.contains(search, true)
+    }
     val glassShape = RoundedCornerShape(22.dp)
-    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
-        TopAppBar(title = { Column { Text("Bmax Super Apps"); Text("Pelanggan", style = MaterialTheme.typography.labelMedium) } }, actions = { TextButton(onClick = onLogout) { Text("Keluar") } })
-    }) { padding ->
-        Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surface))).padding(padding).padding(horizontal = 16.dp)) {
-            OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), label = { Text("Cari IDPEL / nama") }, singleLine = true, shape = RoundedCornerShape(18.dp))
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Column { Text("Bmax Super Apps"); Text("Pelanggan", style = MaterialTheme.typography.labelMedium) } },
+                actions = {
+                    TextButton(onClick = viewModel::refresh, enabled = !loading) { Text("Muat ulang") }
+                    TextButton(onClick = onLogout) { Text("Keluar") }
+                },
+            )
+        },
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize()
+                .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surface)))
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+        ) {
+            OutlinedTextField(
+                value = search,
+                onValueChange = { search = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                label = { Text("Cari IDPEL / nama") },
+                singleLine = true,
+                shape = RoundedCornerShape(18.dp),
+            )
             if (loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
-            error?.let { message -> Text(message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp)) }
+            error?.let { message ->
+                Text(message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
+            }
             Text("${filtered.size} pelanggan", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+            if (!loading && filtered.isEmpty()) {
+                Card(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    shape = glassShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+                ) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Data pelanggan belum tampil", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            if (search.isNotBlank()) {
+                                "Tidak ada pelanggan yang cocok dengan pencarian."
+                            } else {
+                                "Periksa koneksi Supabase dan hak akses akun. Admin/Supervisor dapat melihat seluruh data pelanggan; Biller hanya melihat pelanggan yang ditugaskan."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        TextButton(onClick = viewModel::refresh) { Text("Coba lagi") }
+                    }
+                }
+            }
+
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 items(filtered, key = { it.id }) { c ->
-                    Card(Modifier.fillMaxWidth().clip(glassShape).border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), glassShape), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)), shape = glassShape) {
+                    Card(
+                        Modifier.fillMaxWidth().clip(glassShape).border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), glassShape),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
+                        shape = glassShape,
+                    ) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(c.name, style = MaterialTheme.typography.titleMedium)
                             Text(c.idpel, style = MaterialTheme.typography.labelLarge)
@@ -46,7 +102,9 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
                             HorizontalDivider(Modifier.padding(vertical = 5.dp))
                             Text("Tagihan: Rp ${c.currentBill}")
                             Text("Tunggakan: Rp ${c.arrearsTotal}")
-                            TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) { Text(if (c.latitude != null && c.longitude != null) "Lihat Peta Pelanggan" else "Koordinat belum tersedia") }
+                            TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) {
+                                Text(if (c.latitude != null && c.longitude != null) "Lihat Peta Pelanggan" else "Koordinat belum tersedia")
+                            }
                         }
                     }
                 }
