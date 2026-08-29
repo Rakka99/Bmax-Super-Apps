@@ -8,31 +8,36 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.bmax.app.core.ui.GlassCard
 import id.bmax.app.feature.customer.CustomerViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    viewModel: CustomerViewModel,
+    dashboardViewModel: DashboardViewModel,
+    customerViewModel: CustomerViewModel,
     email: String?,
     role: String,
     onCustomers: () -> Unit,
     onLogout: () -> Unit,
 ) {
-    val customers = viewModel.customers.collectAsStateWithLifecycle().value
-    val loading = viewModel.loading.collectAsStateWithLifecycle().value
-    val error = viewModel.error.collectAsStateWithLifecycle().value
-    val paid = customers.count { it.status.equals("PAID", true) || it.status.equals("LUNAS", true) }
-    val unpaid = (customers.size - paid).coerceAtLeast(0)
-    val collection = if (customers.isEmpty()) 0 else ((paid * 100) / customers.size)
+    val dashboard = dashboardViewModel.dashboard.collectAsStateWithLifecycle().value
+    val loading = dashboardViewModel.loading.collectAsStateWithLifecycle().value
+    val error = dashboardViewModel.error.collectAsStateWithLifecycle().value
+    var period by remember { mutableStateOf<String?>(null) }
     val glass = RoundedCornerShape(24.dp)
+
+    LaunchedEffect(Unit) { dashboardViewModel.refresh() }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -41,7 +46,7 @@ fun DashboardScreen(
                 title = {
                     Column {
                         Text("Bmax Super Apps")
-                        Text("Dashboard", style = MaterialTheme.typography.labelMedium)
+                        Text("Billing Dashboard", style = MaterialTheme.typography.labelMedium)
                     }
                 },
                 actions = { TextButton(onClick = onLogout) { Text("Keluar") } }
@@ -64,16 +69,26 @@ fun DashboardScreen(
                 AssistChip(onClick = {}, label = { Text(role.uppercase()) })
             }
 
+            GlassCard(Modifier.fillMaxWidth()) {
+                Text("Periode Billing", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = period == null, onClick = { period = null; dashboardViewModel.refresh(null) }, label = { Text("Semua") })
+                    FilterChip(selected = period == "202608", onClick = { period = "202608"; dashboardViewModel.refresh("202608") }, label = { Text("AGU 26") })
+                }
+            }
+
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(
                     listOf(
-                        "Pelanggan" to customers.size.toString(),
-                        "Lunas" to paid.toString(),
-                        "Belum Lunas" to unpaid.toString(),
-                        "Collection" to "$collection%"
+                        "Pelanggan" to dashboard.total_customers.toString(),
+                        "Tagihan" to dashboard.total_bills.toString(),
+                        "Lunas" to dashboard.paid_bills.toString(),
+                        "Belum Lunas" to dashboard.unpaid_bills.toString(),
+                        "Collection" to "${dashboard.collection_rate}%"
                     )
                 ) { (label, value) ->
-                    GlassCard(Modifier.width(165.dp)) {
+                    GlassCard(Modifier.width(155.dp)) {
                         Text(label, style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.height(6.dp))
                         Text(value, style = MaterialTheme.typography.headlineMedium)
@@ -82,29 +97,35 @@ fun DashboardScreen(
             }
 
             GlassCard(Modifier.fillMaxWidth()) {
+                Text("Ringkasan Nominal", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(10.dp))
+                Text("Total Tagihan  : Rp ${formatMoney(dashboard.total_billed)}")
+                Text("Sudah Tertagih : Rp ${formatMoney(dashboard.total_paid)}")
+                Text("Belum Tertagih : Rp ${formatMoney(dashboard.total_unpaid)}")
+            }
+
+            GlassCard(Modifier.fillMaxWidth()) {
                 Text("Akses Cepat", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(10.dp))
                 Button(onClick = onCustomers, modifier = Modifier.fillMaxWidth(), shape = glass) {
                     Text("Data Pelanggan & Peta")
                 }
-                OutlinedButton(onClick = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), shape = glass) {
-                    Text(if (loading) "Memuat data..." else "Refresh Data")
+                OutlinedButton(onClick = { dashboardViewModel.refresh(period) }, modifier = Modifier.fillMaxWidth(), shape = glass) {
+                    Text(if (loading) "Memuat data..." else "Refresh Dashboard")
                 }
                 error?.let {
-                    Text(
-                        it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                 }
             }
 
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("Status Sistem", style = MaterialTheme.typography.titleMedium)
-                Text("Supabase Authentication • Customer Data • Maps", style = MaterialTheme.typography.bodyMedium)
-                Text("Data mengikuti akun dan kebijakan RLS Supabase.", style = MaterialTheme.typography.bodySmall)
+                Text("Supabase Auth • Billing RPC • Customer Data • Maps", style = MaterialTheme.typography.bodyMedium)
+                Text("Scope dashboard mengikuti akun dan RLS Supabase.", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
 }
+
+private fun formatMoney(value: Double): String =
+    java.text.NumberFormat.getNumberInstance(java.util.Locale("id", "ID")).format(value)
