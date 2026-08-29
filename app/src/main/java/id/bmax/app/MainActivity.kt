@@ -24,6 +24,7 @@ import id.bmax.app.feature.customer.CustomerDto
 import id.bmax.app.feature.customer.CustomerScreen
 import id.bmax.app.feature.customer.CustomerViewModel
 import id.bmax.app.feature.dashboard.DashboardScreen
+import id.bmax.app.feature.dashboard.DashboardViewModel
 import id.bmax.app.feature.map.CustomerMapScreen
 
 @AndroidEntryPoint
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity() {
                     AuthState.SignedOut, is AuthState.Error, is AuthState.Info -> AuthScreen(authViewModel)
                     is AuthState.SignedIn -> {
                         val customerViewModel: CustomerViewModel = hiltViewModel()
+                        val dashboardViewModel: DashboardViewModel = hiltViewModel()
 
                         when {
                             selectedCustomer != null -> {
@@ -57,7 +59,8 @@ class MainActivity : ComponentActivity() {
                             }
                             else -> {
                                 DashboardScreen(
-                                    viewModel = customerViewModel,
+                                    dashboardViewModel = dashboardViewModel,
+                                    customerViewModel = customerViewModel,
                                     email = state.email,
                                     role = state.role,
                                     onCustomers = { showCustomers = true },
