@@ -16,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.bmax.app.feature.ddtn.DdtnDisplayStatus
+import id.bmax.app.feature.ddtn.DdtnPlnViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,6 +27,9 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
     val customers by viewModel.customers.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val ddtnViewModel: DdtnPlnViewModel = hiltViewModel()
+    val ddtnResults by ddtnViewModel.results.collectAsStateWithLifecycle()
+    val ddtnBusy by ddtnViewModel.busy.collectAsStateWithLifecycle()
     var search by rememberSaveable { mutableStateOf("") }
     val filtered = if (search.isBlank()) customers else customers.filter {
         it.idpel.contains(search, true) || it.name.contains(search, true)
@@ -89,6 +95,8 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(filtered, key = { it.id }) { c ->
+                    val ddtnResult = ddtnResults[c.idpel]
+                    val isChecking = c.idpel in ddtnBusy
                     Card(
                         Modifier.fillMaxWidth().clip(glassShape).border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), glassShape),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
@@ -102,8 +110,39 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
                             HorizontalDivider(Modifier.padding(vertical = 5.dp))
                             Text("Tagihan: Rp ${c.currentBill}")
                             Text("Tunggakan: Rp ${c.arrearsTotal}")
-                            TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) {
-                                Text(if (c.latitude != null && c.longitude != null) "Lihat Peta Pelanggan" else "Koordinat belum tersedia")
+
+                            ddtnResult?.let { result ->
+                                val label = when (result.status) {
+                                    DdtnDisplayStatus.LUNAS -> "DDTN: LUNAS"
+                                    DdtnDisplayStatus.BELUM_LUNAS -> "DDTN: BELUM LUNAS"
+                                    DdtnDisplayStatus.BELUM_TERVERIFIKASI -> "DDTN: BELUM TERVERIFIKASI"
+                                    DdtnDisplayStatus.ERROR -> "DDTN: PEMERIKSAAN GAGAL"
+                                }
+                                val supportingText = buildString {
+                                    result.period?.let { append("Periode $it") }
+                                    result.detail?.let {
+                                        if (isNotEmpty()) append(" • ")
+                                        append(it)
+                                    }
+                                }
+                                AssistChip(onClick = {}, label = { Text(label) })
+                                if (supportingText.isNotBlank()) {
+                                    Text(supportingText, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                Button(
+                                    onClick = { ddtnViewModel.check(c.idpel) },
+                                    enabled = !isChecking,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(16.dp),
+                                ) {
+                                    Text(if (isChecking) "Memeriksa..." else "Cek PLN DDTN")
+                                }
+                                TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) {
+                                    Text(if (c.latitude != null && c.longitude != null) "Peta" else "No GPS")
+                                }
                             }
                         }
                     }
