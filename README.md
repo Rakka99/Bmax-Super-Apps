@@ -1,6 +1,6 @@
 # Bmax Super Apps
 
-Bmax Electricity Payment Monitoring — Android project foundation wired to the live SMARTBILLER Supabase project.
+Bmax Electricity Payment Monitoring — Android project foundation wired to the live Bmax Super Apps Supabase project.
 
 ## Stack
 
@@ -8,15 +8,43 @@ Kotlin, Jetpack Compose, Material 3, MVVM/Clean-oriented structure, Hilt, Room, 
 
 ## Live Supabase configuration
 
-The Android client uses the SMARTBILLER project URL and a **publishable** key. Publishable keys are safe for mobile/public source when RLS is correctly configured; never ship a Supabase secret/service-role key in the APK.
+The Android client uses the Bmax Supabase project URL and a **publishable** key. Publishable keys are intended for client applications; never ship a Supabase secret/service-role key or a DDTN API key in the APK.
 
-Project URL:
-`https://vgnynrzhanfnbifjedga.supabase.co`
+Live Bmax Supabase project URL:
+`https://pcvzfthpbytrydsvrhtg.supabase.co`
 
-`app/build.gradle.kts` accepts these optional Gradle properties and falls back to the live publishable configuration when they are not supplied:
+`app/build.gradle.kts` accepts these optional Gradle properties:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
+- `MAPS_API_KEY`
+
+When `SUPABASE_URL` is not supplied, the build falls back to the live Bmax Supabase project URL above.
+
+## DDTN PLN integration
+
+Bmax now calls the Supabase Edge Function `ddtn-pln-sync` from the Android customer screen. The Android client sends the signed-in user's Supabase session JWT plus the publishable key; the DDTN API key remains server-side in the Supabase Edge Function secret `DDTN_API_KEY`.
+
+Flow:
+
+```text
+Android Bmax
+  -> Supabase Edge Function: ddtn-pln-sync
+  -> DDTN POST /v1/pln/check-bulk
+  -> match customer_no + period
+  -> update public.billings
+```
+
+Status handling:
+
+- `is_paid = true` -> `billings.status = PAID`
+- `is_paid = false` -> `billings.status = UNPAID`
+- `is_paid = null` -> existing billing status is preserved as unverified
+- DDTN/provider HTTP errors never force a PAID/UNPAID value
+- `checked_at` is stored in the existing `billings.synced_at` field
+- DDTN-driven updates use the existing `billings.source` value `API`
+
+The existing database schema is reused; no new billing/invoice table is required for this integration.
 
 ## Customer import compatibility
 
@@ -47,15 +75,16 @@ For one import batch:
 select * from public.import_customer_staging('<IMPORT_BATCH_UUID>');
 ```
 
-Do not use a Supabase service-role/secret key from Android. Server-only IAK credentials must remain in Edge Functions/backend secrets.
-
 ## GitHub Actions
 
-The workflow at `.github/workflows/android-ci.yml` builds a debug APK on pushes and pull requests to `main`. It uses JDK 17 and Gradle 8.9, matching the Android Gradle Plugin 8.7.3 configuration.
+The workflow at `.github/workflows/android-ci.yml` builds a debug APK on pushes and pull requests to `main`. It uses JDK 17 and Gradle 8.9.
 
-Optional repository secrets can override the built-in publishable configuration:
+Required repository secrets:
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
+- `MAPS_API_KEY`
+
+The DDTN API key is **not** a GitHub/Android secret. Keep it only in Supabase Edge Function Secrets as `DDTN_API_KEY`.
 
 ## Local build
 
@@ -67,8 +96,6 @@ gradle assembleDebug
 
 ## Current scope
 
-The repository now contains the live Supabase compatibility layer, Auth/customer client integration, and CI build configuration. Production work still includes complete feature modules, Apps Script adapter, IAK Edge Functions, payment state machine/idempotency tests, printer/PDF, Maps, FCM, and release signing.
+The repository contains the live Supabase Auth/customer client, DDTN PLN status integration, customer-level DDTN checking, CI build configuration, and Maps foundation. Mass DDTN synchronization/scheduling should only be enabled after the customer-level integration is validated.
 
 Target repository: https://github.com/Rakka99/Bmax-Super-Apps.git
-
-CI checkpoint: 2026-08-24 — debug APK build uses Android's standard debug signing; no custom keystore is required.

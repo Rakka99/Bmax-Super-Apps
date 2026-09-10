@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          files=(app/build.gradle.kts app/src/main/AndroidManifest.xml app/src/main/java/id/bmax/app/MainActivity.kt app/src/main/java/id/bmax/app/BmaxApplication.kt app/src/main/java/id/bmax/app/core/di/SupabaseModule.kt app/src/main/java/id/bmax/app/core/ui/Theme.kt app/src/main/java/id/bmax/app/feature/auth/AuthViewModel.kt app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt app/src/main/java/id/bmax/app/feature/customer/CustomerViewModel.kt app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt app/src/main/java/id/bmax/app/feature/map/CustomerMapScreen.kt)
+          files=(app/build.gradle.kts app/src/main/AndroidManifest.xml app/src/main/java/id/bmax/app/MainActivity.kt app/src/main/java/id/bmax/app/BmaxApplication.kt app/src/main/java/id/bmax/app/core/di/SupabaseModule.kt app/src/main/java/id/bmax/app/core/ui/Theme.kt app/src/main/java/id/bmax/app/feature/auth/AuthViewModel.kt app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt app/src/main/java/id/bmax/app/feature/customer/CustomerViewModel.kt app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt app/src/main/java/id/bmax/app/feature/ddtn/DdtnPlnRepository.kt app/src/main/java/id/bmax/app/feature/ddtn/DdtnPlnViewModel.kt app/src/main/java/id/bmax/app/feature/map/CustomerMapScreen.kt)
           for f in "${files[@]}"; do test -s "$f"; done
           grep -q 'com.google.android.geo.API_KEY' app/src/main/AndroidManifest.xml
           grep -q 'MAPS_API_KEY' app/build.gradle.kts
@@ -56,6 +56,9 @@ jobs:
           grep -q 'play-services-maps' app/build.gradle.kts
           grep -q 'maps-compose' app/build.gradle.kts
           grep -q 'from("customers")' app/src/main/java/id/bmax/app/feature/customer/CustomerRepository.kt
+          grep -q 'ddtn-pln-sync' app/src/main/java/id/bmax/app/feature/ddtn/DdtnPlnRepository.kt
+          grep -q 'currentAccessTokenOrNull' app/src/main/java/id/bmax/app/feature/ddtn/DdtnPlnRepository.kt
+          grep -q 'Cek PLN DDTN' app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
           grep -q 'RoundedCornerShape' app/src/main/java/id/bmax/app/feature/auth/AuthScreen.kt
           grep -q 'RoundedCornerShape' app/src/main/java/id/bmax/app/feature/customer/CustomerScreen.kt
           grep -q 'GoogleMap' app/src/main/java/id/bmax/app/feature/map/CustomerMapScreen.kt
