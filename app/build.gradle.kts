@@ -14,9 +14,10 @@ android {
         applicationId = "id.bmax.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.1.0"
-        val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString()?.takeIf { it.isNotBlank() } ?: ""
+        versionCode = 5
+        versionName = "1.2.0"
+        val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString()?.takeIf { it.isNotBlank() }
+            ?: "https://pcvzfthpbytrydsvrhtg.supabase.co"
         val supabaseKey = project.findProperty("SUPABASE_PUBLISHABLE_KEY")?.toString()?.takeIf { it.isNotBlank() } ?: ""
         val mapsKey = project.findProperty("MAPS_API_KEY")?.toString()?.takeIf { it.isNotBlank() } ?: ""
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
