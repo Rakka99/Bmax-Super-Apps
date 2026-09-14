@@ -47,6 +47,9 @@ data class CurrentUserContextDto(
 class CustomerRepository @Inject constructor(
     private val supabase: SupabaseClient,
 ) {
+    // The customer domain remains backed by the existing `from("customers")` source table.
+    // For the UI projection we intentionally use the existing database RPC below because it
+    // applies the authenticated role/Biller scope inside PostgreSQL before rows reach the app.
     suspend fun getCurrentUserContext(): CurrentUserContextDto =
         supabase.postgrest.rpc("app_get_current_user_context")
             .decodeList<CurrentUserContextDto>()
