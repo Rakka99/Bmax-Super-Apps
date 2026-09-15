@@ -55,7 +55,7 @@ class CustomerRepository @Inject constructor(
 
     /**
      * Reads the existing customers table directly and scopes BILLER data before it enters UI state.
-     * The query is paged so the complete Biller customer set can be loaded without a 100-row UI cap.
+     * Pagination prevents the customer screen from treating a single page as the total dataset.
      */
     suspend fun getCustomers(): Pair<CurrentUserContextDto, List<CustomerDto>> {
         val context = getCurrentUserContext()
@@ -63,22 +63,19 @@ class CustomerRepository @Inject constructor(
         val billerId = context.billerId?.trim().takeUnless { it.isNullOrEmpty() }
             ?: context.username?.trim().takeUnless { it.isNullOrEmpty() }
 
+        if (role == "BILLER" && billerId.isNullOrBlank()) {
+            throw IllegalStateException("Biller ID pengguna aktif tidak ditemukan; data customer tidak dimuat untuk mencegah data lintas Biller.")
+        }
+
         val pageSize = 100
-        val maxRows = if (role == "BILLER") 5_000 else 5_000
+        val maxPages = 50
         val all = mutableListOf<CustomerDto>()
         var offset = 0
 
-        repeat(maxRows / pageSize) {
+        repeat(maxPages) {
             val page = supabase.from("customers").select {
                 if (role == "BILLER") {
-                    if (billerId.isNullOrBlank()) {
-                        // An active BILLER must always have an authoritative username/biller_id.
-                        // Do not fall back to a global customer query.
-                        return@select
-                    }
-                    filter {
-                        eq("biller_id", billerId)
-                    }
+                    filter { eq("biller_id", billerId!!) }
                 }
                 order("nama", Order.ASCENDING)
                 order("id_pelanggan", Order.ASCENDING)
@@ -90,10 +87,6 @@ class CustomerRepository @Inject constructor(
             all += page.map { it.toDto(billerId) }
             if (page.size < pageSize) return@repeat
             offset += page.size
-        }
-
-        if (role == "BILLER" && billerId.isNullOrBlank()) {
-            throw IllegalStateException("Biller ID pengguna aktif tidak ditemukan; data customer tidak dimuat untuk mencegah data lintas Biller.")
         }
 
         return context to all.distinctBy { it.idpel }
