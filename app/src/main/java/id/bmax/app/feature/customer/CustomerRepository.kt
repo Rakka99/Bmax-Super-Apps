@@ -1,7 +1,8 @@
 package id.bmax.app.feature.customer
 
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.rpc
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -9,26 +10,25 @@ import javax.inject.Inject
 @Serializable
 data class CustomerDto(
     val id: String,
-    val idpel: String,
-    val name: String,
-    val address: String? = null,
-    @SerialName("no_meter") val meterNumber: String? = null,
-    @SerialName("gardu_tiang") val garduTiang: String? = null,
-    @SerialName("tariff_daya") val tariffPower: String? = null,
-    val rbm: String? = null,
-    @SerialName("wilker_biller") val billerName: String? = null,
-    val status: String? = null,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-    val billerId: String? = null,
+    @SerialName("id_pelanggan") val idpel: String,
+    @SerialName("nama") val name: String,
+    @SerialName("alamat") val address: String? = null,
+    @SerialName("tarif") val tariffValue: String? = null,
+    @SerialName("daya") val powerValue: Int? = null,
+    @SerialName("rbm_code") val rbm: String? = null,
+    @SerialName("status") val statusValue: String? = null,
+    @SerialName("biller_id") val billerId: String? = null,
     val currentBill: Double = 0.0,
     val arrearsTotal: Double = 0.0,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 ) {
-    val tariff: String?
-        get() = tariffPower?.substringBefore(" / ")?.takeIf { it.isNotBlank() }
-
-    val powerVa: Int?
-        get() = tariffPower?.substringAfter(" / ", "")?.trim()?.removeSuffix("VA")?.trim()?.toIntOrNull()
+    val meterNumber: String? get() = null
+    val garduTiang: String? get() = null
+    val billerName: String? get() = billerId
+    val status: String? get() = statusValue
+    val tariff: String? get() = tariffValue
+    val powerVa: Int? get() = powerValue
 }
 
 @Serializable
@@ -47,9 +47,6 @@ data class CurrentUserContextDto(
 class CustomerRepository @Inject constructor(
     private val supabase: SupabaseClient,
 ) {
-    // The customer domain remains backed by the existing `from("customers")` source table.
-    // For the UI projection we intentionally use the existing database RPC below because it
-    // applies the authenticated role/Biller scope inside PostgreSQL before rows reach the app.
     suspend fun getCurrentUserContext(): CurrentUserContextDto =
         supabase.postgrest.rpc("app_get_current_user_context")
             .decodeList<CurrentUserContextDto>()
@@ -57,10 +54,8 @@ class CustomerRepository @Inject constructor(
             ?: throw IllegalStateException("Profil pengguna aktif tidak ditemukan di database.")
 
     /**
-     * Reads the existing customer-info RPC. The RPC enforces database-side role/RLS scope,
-     * therefore a BILLER cannot receive another BILLER's customers even if the UI filter changes.
-     * BILLER scope is loaded page-by-page so the RBM filters can operate on the complete
-     * customer set owned by the logged-in BILLER without using a global cache.
+     * Reads the existing customers table directly and scopes BILLER data before it enters UI state.
+     * The query is paged so the complete Biller customer set can be loaded without a 100-row UI cap.
      */
     suspend fun getCustomers(): Pair<CurrentUserContextDto, List<CustomerDto>> {
         val context = getCurrentUserContext()
@@ -69,46 +64,41 @@ class CustomerRepository @Inject constructor(
             ?: context.username?.trim().takeUnless { it.isNullOrEmpty() }
 
         val pageSize = 100
-        val maxRows = if (role == "BILLER") 5_000 else 500
+        val maxRows = if (role == "BILLER") 5_000 else 5_000
         val all = mutableListOf<CustomerDto>()
         var offset = 0
 
-        while (all.size < maxRows) {
-            val page = supabase.postgrest.rpc("app_list_customer_info") {
-                parameter("p_query", "")
-                parameter("p_limit", pageSize)
-                parameter("p_offset", offset)
-            }.decodeList<CustomerInfoRpcDto>()
+        repeat(maxRows / pageSize) {
+            val page = supabase.from("customers").select {
+                if (role == "BILLER") {
+                    if (billerId.isNullOrBlank()) {
+                        // An active BILLER must always have an authoritative username/biller_id.
+                        // Do not fall back to a global customer query.
+                        return@select
+                    }
+                    filter {
+                        eq("biller_id", billerId)
+                    }
+                }
+                order("nama", Order.ASCENDING)
+                order("id_pelanggan", Order.ASCENDING)
+                range(offset.toLong(), (offset + pageSize - 1).toLong())
+            }.decodeList<CustomerRow>()
 
-            if (page.isEmpty()) break
+            if (page.isEmpty()) return@repeat
 
-            page.forEach { row ->
-                val normalizedBiller = billerId?.trim()
-                all += CustomerDto(
-                    id = row.idpel,
-                    idpel = row.idpel,
-                    name = row.name,
-                    address = row.address,
-                    meterNumber = row.noMeter,
-                    garduTiang = row.garduTiang,
-                    tariffPower = row.tariffDaya,
-                    rbm = row.rbm?.trim()?.takeIf { it.isNotEmpty() },
-                    billerName = row.wilkerBiller,
-                    status = row.status,
-                    latitude = row.latitude,
-                    longitude = row.longitude,
-                    billerId = normalizedBiller,
-                )
-            }
-
-            if (page.size < pageSize) break
+            all += page.map { it.toDto(billerId) }
+            if (page.size < pageSize) return@repeat
             offset += page.size
+        }
+
+        if (role == "BILLER" && billerId.isNullOrBlank()) {
+            throw IllegalStateException("Biller ID pengguna aktif tidak ditemukan; data customer tidak dimuat untuk mencegah data lintas Biller.")
         }
 
         return context to all.distinctBy { it.idpel }
     }
 
-    /** Returns RBM options derived from the already scoped customer master. */
     fun getRbms(customers: List<CustomerDto>): List<String> =
         customers.mapNotNull { it.rbm?.trim()?.takeIf(String::isNotEmpty) }
             .distinct()
@@ -116,16 +106,30 @@ class CustomerRepository @Inject constructor(
 }
 
 @Serializable
-private data class CustomerInfoRpcDto(
-    val idpel: String,
-    val name: String,
-    val address: String? = null,
-    @SerialName("no_meter") val noMeter: String? = null,
-    @SerialName("gardu_tiang") val garduTiang: String? = null,
-    @SerialName("tariff_daya") val tariffDaya: String? = null,
-    val rbm: String? = null,
-    @SerialName("wilker_biller") val wilkerBiller: String? = null,
-    val status: String? = null,
+private data class CustomerRow(
+    val id: String,
+    @SerialName("id_pelanggan") val idpel: String,
+    @SerialName("nama") val name: String,
+    @SerialName("alamat") val address: String? = null,
+    @SerialName("tarif") val tariff: String? = null,
+    @SerialName("daya") val powerVa: Int? = null,
+    @SerialName("rbm_code") val rbm: String? = null,
+    @SerialName("status") val status: String? = null,
+    @SerialName("biller_id") val billerId: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
-)
+) {
+    fun toDto(fallbackBillerId: String?): CustomerDto = CustomerDto(
+        id = id,
+        idpel = idpel,
+        name = name,
+        address = address,
+        tariffValue = tariff,
+        powerValue = powerVa,
+        rbm = rbm,
+        statusValue = status,
+        billerId = billerId ?: fallbackBillerId,
+        latitude = latitude,
+        longitude = longitude,
+    )
+}
