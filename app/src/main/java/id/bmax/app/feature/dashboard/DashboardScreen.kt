@@ -122,15 +122,9 @@ fun DashboardScreen(
                     )
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    money(dashboard.unpaid_amount),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
-                )
-                Text(
-                    "${dashboard.unpaid_customers} belum bayar • hanya UNPAID yang dihitung sebagai saldo berjalan",
+                    "Saldo = RP TAG PLN saja • admin dan denda tidak dihitung",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
