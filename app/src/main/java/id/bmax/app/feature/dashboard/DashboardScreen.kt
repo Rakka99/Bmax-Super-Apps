@@ -93,14 +93,14 @@ fun DashboardScreen(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(
-                            "SALDO AWAL RUPIAH",
+                            "SALDO RPTAG PLN",
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            money(dashboard.total_amount),
+                            money(dashboard.unpaid_amount),
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -110,7 +110,7 @@ fun DashboardScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Awal ${money(dashboard.total_amount)} • Lunas ${money(dashboard.paid_amount)} (${dashboard.paid_customers} tagihan)",
+                            "Tanpa admin dan tanpa denda • ${dashboard.unpaid_customers} tagihan UNPAID",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -219,7 +219,7 @@ fun DashboardScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "Daftar tugas aktif hanya berasal dari billing berstatus UNPAID. Billing PAID/Lunas tidak ditampilkan sebagai tugas aktif.",
+                    "Daftar tugas aktif hanya berasal dari billing berstatus UNPAID. Billing PAID/Lunas dan shared RBM Supervisor tidak ditampilkan sebagai tugas aktif Biller.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -259,7 +259,7 @@ fun DashboardScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Status PAID/Lunas tetap tersimpan sebagai histori pembayaran dan tidak tampil sebagai tugas aktif.",
+                            "Status PAID/Lunas tersimpan sebagai histori. Saldo di atas hanya RP TAG PLN dari UNPAID, tanpa admin dan tanpa denda.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
