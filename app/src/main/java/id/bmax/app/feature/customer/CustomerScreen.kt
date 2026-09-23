@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,8 +102,8 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
                             Text(c.address ?: "Alamat belum tersedia", style = MaterialTheme.typography.bodyMedium)
                             Text("${c.tariff ?: "-"} • ${c.powerVa ?: 0} VA • ${c.status ?: "-"}")
                             HorizontalDivider(Modifier.padding(vertical = 5.dp))
-                            Text("Tagihan: Rp ${c.currentBill}")
-                            Text("Tunggakan: Rp ${c.arrearsTotal}")
+                            Text("Tagihan PLN: " + money(c.currentBill), style = MaterialTheme.typography.titleSmall)
+                            Text(if (c.arrearsTotal > 0) "Tunggakan: " + money(c.arrearsTotal) else "Status tagihan: Lunas")
                             TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) {
                                 Text(if (c.latitude != null && c.longitude != null) "Lihat Peta Pelanggan" else "Koordinat belum tersedia")
                             }
@@ -112,3 +114,9 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
         }
     }
 }
+
+private fun money(value: Double): String =
+    NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
+        maximumFractionDigits = 0
+        minimumFractionDigits = 0
+    }.format(value)
