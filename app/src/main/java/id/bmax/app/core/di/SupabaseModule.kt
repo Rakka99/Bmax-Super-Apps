@@ -10,6 +10,8 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.realtime.Realtime
+import kotlin.time.Duration.Companion.seconds
 import javax.inject.Singleton
 
 @Module
@@ -28,5 +30,8 @@ object SupabaseModule {
             host = "login"
         }
         install(Postgrest)
+        install(Realtime) {
+            reconnectDelay = 5.seconds
+        }
     }
 }
