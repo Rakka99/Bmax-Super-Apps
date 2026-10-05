@@ -43,3 +43,7 @@ EXECUTE FUNCTION public.create_billing_paid_notification();
 
 CREATE INDEX IF NOT EXISTS idx_user_notifications_user_created
 ON public.user_notifications (user_id, created_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_user_notifications_billing_paid
+ON public.user_notifications (user_id, type, entity_type, entity_id)
+WHERE type = 'BILLING_PAID' AND entity_type = 'BILLING';
