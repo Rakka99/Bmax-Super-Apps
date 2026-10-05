@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.bmax.app.core.ui.GlassCard
 import id.bmax.app.feature.customer.CustomerViewModel
+import id.bmax.app.feature.notification.NotificationViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -50,6 +51,7 @@ private val IrisanColor = Color(0xFFE8797A)
 fun DashboardScreen(
     dashboardViewModel: DashboardViewModel,
     customerViewModel: CustomerViewModel,
+    notificationViewModel: NotificationViewModel,
     email: String?,
     role: String,
     onCustomers: () -> Unit,
@@ -63,6 +65,9 @@ fun DashboardScreen(
 
     var selectedCategory by remember { mutableStateOf("SEMUA") }
     LaunchedEffect(Unit) { dashboardViewModel.refresh() }
+    val notifications by notificationViewModel.notifications.collectAsStateWithLifecycle()
+    val realtimeConnected by notificationViewModel.realtimeConnected.collectAsStateWithLifecycle()
+    val latestLunas = notifications.firstOrNull { it.type.equals("BILLING_PAID", ignoreCase = true) }
 
     val totalOpenTasks = categories.sumOf { it.unpaid_count }.coerceAtLeast(0)
     val visibleOpenTasks = when (selectedCategory) {
@@ -84,6 +89,39 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             ProfileCard(email = email, role = role, period = period)
+
+            latestLunas?.let { notification ->
+                GlassCard(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "NOTIFIKASI LUNAS",
+                                color = Color(0xFF238B57),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(notification.title, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                notification.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            if (realtimeConnected) "REALTIME" else "SYNC",
+                            color = if (realtimeConnected) Color(0xFF238B57) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
             GlassCard(Modifier.fillMaxWidth()) {
                 Row(
