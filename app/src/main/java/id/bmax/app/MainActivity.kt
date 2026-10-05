@@ -26,6 +26,7 @@ import id.bmax.app.feature.customer.CustomerViewModel
 import id.bmax.app.feature.dashboard.DashboardScreen
 import id.bmax.app.feature.dashboard.DashboardViewModel
 import id.bmax.app.feature.map.CustomerMapScreen
+import id.bmax.app.feature.notification.NotificationViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,6 +45,11 @@ class MainActivity : ComponentActivity() {
                     is AuthState.SignedIn -> {
                         val customerViewModel: CustomerViewModel = hiltViewModel()
                         val dashboardViewModel: DashboardViewModel = hiltViewModel()
+                        val notificationViewModel: NotificationViewModel = hiltViewModel()
+                        androidx.compose.runtime.DisposableEffect(Unit) {
+                            notificationViewModel.start()
+                            onDispose { notificationViewModel.stop() }
+                        }
 
                         when {
                             selectedCustomer != null -> {
@@ -61,6 +67,7 @@ class MainActivity : ComponentActivity() {
                                 DashboardScreen(
                                     dashboardViewModel = dashboardViewModel,
                                     customerViewModel = customerViewModel,
+                                    notificationViewModel = notificationViewModel,
                                     email = state.email,
                                     role = state.role,
                                     onCustomers = { showCustomers = true },
