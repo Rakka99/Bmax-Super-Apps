@@ -22,7 +22,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap: (CustomerDto) -> Unit) {
+fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap: (CustomerDto) -> Unit, onShowInvoice: (CustomerDto) -> Unit) {
     val customers by viewModel.customers.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -104,8 +104,16 @@ fun CustomerScreen(viewModel: CustomerViewModel, onLogout: () -> Unit, onShowMap
                             HorizontalDivider(Modifier.padding(vertical = 5.dp))
                             Text("Tagihan PLN: " + money(c.currentBill), style = MaterialTheme.typography.titleSmall)
                             Text(if (c.arrearsTotal > 0) "Tunggakan: " + money(c.arrearsTotal) else "Status tagihan: Lunas")
-                            TextButton(onClick = { onShowMap(c) }, enabled = c.latitude != null && c.longitude != null) {
-                                Text(if (c.latitude != null && c.longitude != null) "Lihat Peta Pelanggan" else "Koordinat belum tersedia")
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(
+                                    onClick = { onShowMap(c) },
+                                    enabled = c.latitude != null && c.longitude != null,
+                                ) {
+                                    Text(if (c.latitude != null && c.longitude != null) "Lihat Peta" else "Peta tidak tersedia")
+                                }
+                                TextButton(onClick = { onShowInvoice(c) }) {
+                                    Text("Cetak Invoice")
+                                }
                             }
                         }
                     }
