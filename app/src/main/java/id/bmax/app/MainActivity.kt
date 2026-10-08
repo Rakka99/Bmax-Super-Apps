@@ -26,6 +26,8 @@ import id.bmax.app.feature.customer.CustomerViewModel
 import id.bmax.app.feature.dashboard.DashboardScreen
 import id.bmax.app.feature.dashboard.DashboardViewModel
 import id.bmax.app.feature.map.CustomerMapScreen
+import id.bmax.app.feature.invoice.InvoiceScreen
+import id.bmax.app.feature.invoice.InvoiceViewModel
 import id.bmax.app.feature.notification.NotificationViewModel
 
 @AndroidEntryPoint
@@ -38,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 val authState by authViewModel.state.collectAsStateWithLifecycle()
                 var showCustomers by remember { mutableStateOf(false) }
                 var selectedCustomer by remember { mutableStateOf<CustomerDto?>(null) }
+                var invoiceCustomer by remember { mutableStateOf<CustomerDto?>(null) }
 
                 when (val state = authState) {
                     AuthState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -46,12 +49,17 @@ class MainActivity : ComponentActivity() {
                         val customerViewModel: CustomerViewModel = hiltViewModel()
                         val dashboardViewModel: DashboardViewModel = hiltViewModel()
                         val notificationViewModel: NotificationViewModel = hiltViewModel()
+                        val invoiceViewModel: InvoiceViewModel = hiltViewModel()
                         androidx.compose.runtime.DisposableEffect(Unit) {
                             notificationViewModel.start()
                             onDispose { notificationViewModel.stop() }
                         }
 
                         when {
+                            invoiceCustomer != null -> {
+                                BackHandler { invoiceCustomer = null }
+                                InvoiceScreen(invoiceCustomer!!, invoiceViewModel) { invoiceCustomer = null }
+                            }
                             selectedCustomer != null -> {
                                 BackHandler { selectedCustomer = null }
                                 val customer = selectedCustomer!!
@@ -61,7 +69,12 @@ class MainActivity : ComponentActivity() {
                             }
                             showCustomers -> {
                                 BackHandler { showCustomers = false }
-                                CustomerScreen(customerViewModel, authViewModel::signOut) { selectedCustomer = it }
+                                CustomerScreen(
+                                    viewModel = customerViewModel,
+                                    onLogout = authViewModel::signOut,
+                                    onShowMap = { selectedCustomer = it },
+                                    onShowInvoice = { invoiceCustomer = it },
+                                )
                             }
                             else -> {
                                 DashboardScreen(
