@@ -1,6 +1,6 @@
 # Bmax Super Apps
 
-Bmax Electricity Payment Monitoring — Android project foundation wired to the live SMARTBILLER Supabase project.
+Bmax Electricity Payment Monitoring Android app. Supabase endpoint and publishable key are provided at build time; verify they target the intended environment before releasing.
 
 ## Stack
 
