@@ -41,7 +41,22 @@ jobs:
           test -n "$SUPABASE_URL" || { echo "ERROR: SUPABASE_URL repository secret is empty or unavailable."; exit 1; }
           test -n "$SUPABASE_PUBLISHABLE_KEY" || { echo "ERROR: SUPABASE_PUBLISHABLE_KEY repository secret is empty or unavailable."; exit 1; }
           test -n "$MAPS_API_KEY" || { echo "ERROR: MAPS_API_KEY repository secret is empty or unavailable."; exit 1; }
-          case "$SUPABASE_URL" in https://*.supabase.co) ;; *) echo "ERROR: SUPABASE_URL must be a Supabase HTTPS URL."; exit 1 ;; esac
+          python3 - "$SUPABASE_URL" <<'PY'
+          import sys
+          from urllib.parse import urlparse
+          url = urlparse(sys.argv[1])
+          if (
+              url.scheme != "https"
+              or not url.hostname
+              or url.username
+              or url.password
+              or url.query
+              or url.fragment
+              or url.path not in ("", "/")
+          ):
+              print("ERROR: SUPABASE_URL must be a root HTTPS URL without credentials, path, query, or fragment.")
+              raise SystemExit(1)
+          PY
           echo "All required repository secrets are available. Values are not printed."
 
       - name: Verify application implementation
