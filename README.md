@@ -6,17 +6,18 @@ Bmax Electricity Payment Monitoring — Android project foundation wired to the 
 
 Kotlin, Jetpack Compose, Material 3, MVVM/Clean-oriented structure, Hilt, Room, DataStore, WorkManager, Ktor/Supabase Auth/PostgREST/Realtime/Storage.
 
-## Live Supabase configuration
+## Supabase endpoint configuration
 
-The Android client uses the SMARTBILLER project URL and a **publishable** key. Publishable keys are safe for mobile/public source when RLS is correctly configured; never ship a Supabase secret/service-role key in the APK.
+The Android app is configured at build time. The repository does not define a production URL fallback; the build must provide these Gradle properties:
 
-Project URL:
-`https://vgnynrzhanfnbifjedga.supabase.co`
+- `SUPABASE_URL`: the root HTTPS URL for the exact Supabase instance used by this build.
+- `SUPABASE_PUBLISHABLE_KEY`: the publishable/anon key issued by that same instance.
 
-`app/build.gradle.kts` accepts these optional Gradle properties and falls back to the live publishable configuration when they are not supplied:
+GitHub Actions reads these values from repository secrets with the same names. Keep them matched to one environment (Cloud or self-hosted); do not mix a Cloud URL with a self-hosted key or vice versa.
 
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY`
+For self-hosted production, point `SUPABASE_URL` at a custom domain with valid HTTPS that reverse-proxies to the Supabase API gateway. Do not point the app at the database port, Redis, or an unencrypted HTTP endpoint. Confirm the endpoint and Auth configuration before distributing an APK.
+
+Publishable keys are suitable for a mobile app only when RLS is configured correctly. Never ship a Supabase secret/service-role key in the APK. After moving to a self-hosted instance with a different JWT secret, users should expect to sign in again.
 
 ## Customer import compatibility
 
