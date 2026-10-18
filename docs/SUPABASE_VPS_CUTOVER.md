@@ -76,11 +76,11 @@ After confirming the staging target is fresh and backed up, use its verified Pos
 set -euo pipefail
 read -rsp 'Staging PostgreSQL connection string: ' TARGET_DB_URL
 printf '\n'
-psql --single-transaction --variable ON_ERROR_STOP=1 \\
-  --file "$BACKUP_DIR/roles.sql" \\
-  --file "$BACKUP_DIR/schema.sql" \\
-  --command 'SET session_replication_role = replica' \\
-  --file "$BACKUP_DIR/data.sql" \\
+psql --single-transaction --variable ON_ERROR_STOP=1 \
+  --file "$BACKUP_DIR/roles.sql" \
+  --file "$BACKUP_DIR/schema.sql" \
+  --command 'SET session_replication_role = replica' \
+  --file "$BACKUP_DIR/data.sql" \
   --dbname "$TARGET_DB_URL"
 unset TARGET_DB_URL
 ```
