@@ -113,6 +113,9 @@ fun InvoiceScreen(
             }
 
             invoice?.let { data ->
+                val nominalAvailable = data.nominalStatus.equals("AVAILABLE", ignoreCase = true) &&
+                    data.rptagPln != null && data.invoiceTotal != null
+
                 item {
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -136,11 +139,24 @@ fun InvoiceScreen(
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("RINCIAN", style = MaterialTheme.typography.titleMedium)
-                            InvoiceAmountRow("RPTAG PLN", data.rptagPln)
-                            if (data.adminPln > 0) InvoiceAmountRow("Admin PLN", data.adminPln)
-                            if (data.penalty > 0) InvoiceAmountRow("Denda", data.penalty)
-                            HorizontalDivider()
-                            InvoiceAmountRow("TOTAL", data.invoiceTotal, emphasize = true)
+                            if (nominalAvailable) {
+                                InvoiceAmountRow("RPTAG PLN", data.rptagPln!!)
+                                if (data.adminPln > 0) InvoiceAmountRow("Admin PLN", data.adminPln)
+                                if (data.penalty > 0) InvoiceAmountRow("Denda", data.penalty)
+                                HorizontalDivider()
+                                InvoiceAmountRow("TOTAL", data.invoiceTotal!!, emphasize = true)
+                            } else {
+                                Text(
+                                    "Nominal belum tersedia",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                )
+                                Text(
+                                    "Status pembayaran tercatat LUNAS, tetapi nominal belum didapat dari sumber yang tervalidasi. RPTAG dan total tidak ditampilkan agar tidak dianggap Rp0.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
