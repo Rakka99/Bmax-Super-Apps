@@ -13,14 +13,16 @@ data class InvoiceDisplayDto(
     val period: String = "",
     val status: String = "UNPAID",
     val category: String = "PREVENTIF",
-    @SerialName("rptag_pln") val rptagPln: Long = 0,
+    @SerialName("rptag_pln") val rptagPln: Long? = null,
     @SerialName("admin_pln") val adminPln: Long = 0,
     val penalty: Long = 0,
-    @SerialName("invoice_total") val invoiceTotal: Long = 0,
+    @SerialName("invoice_total") val invoiceTotal: Long? = null,
     @SerialName("rbm_code") val rbmCode: String? = null,
     @SerialName("biller_id") val billerId: String? = null,
     @SerialName("stand_meter") val standMeter: String? = null,
     @SerialName("billing_period") val billingPeriod: String? = null,
+    @SerialName("nominal_status") val nominalStatus: String = "AVAILABLE",
+    @SerialName("nominal_source") val nominalSource: String? = null,
 )
 
 class InvoiceRepository @Inject constructor(
