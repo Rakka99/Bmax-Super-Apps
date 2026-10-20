@@ -62,6 +62,43 @@ BEFORE INSERT OR UPDATE OF amount, status, source, nominal_source, nominal_statu
 ON public.billings
 FOR EACH ROW EXECUTE FUNCTION private.sync_billing_nominal_metadata();
 
+-- The existing billing ownership trigger used to coalesce every NULL amount to zero.
+-- Preserve NULL only for a confirmed PAID record explicitly marked nominal unavailable.
+CREATE OR REPLACE FUNCTION public.sync_billing_owner()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+DECLARE
+  c_biller text;
+  c_ulp text;
+BEGIN
+  SELECT c.biller_id, c.ulp_id
+    INTO c_biller, c_ulp
+  FROM public.customers AS c
+  WHERE c.id = NEW.customer_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Customer tidak ditemukan';
+  END IF;
+
+  NEW.biller_id := c_biller;
+  NEW.ulp_id := c_ulp;
+  IF NEW.amount IS NULL
+     AND upper(coalesce(NEW.status, '')) = 'PAID'
+     AND upper(coalesce(NEW.nominal_status, '')) = 'UNAVAILABLE' THEN
+    NEW.amount := NULL;
+  ELSE
+    NEW.amount := greatest(coalesce(NEW.amount, 0), 0);
+  END IF;
+  NEW.admin_bank := coalesce(NEW.admin_bank, 0);
+  NEW.penalty := greatest(coalesce(NEW.penalty, 0), 0);
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$function$;
+
 COMMENT ON COLUMN public.billings.nominal_status IS
 'AVAILABLE means a positive validated amount exists; PENDING means unpaid amount needs validation; UNAVAILABLE means payment is confirmed but nominal is not currently known.';
 COMMENT ON COLUMN public.billings.nominal_source IS
