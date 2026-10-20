@@ -152,7 +152,7 @@ fun InvoiceScreen(
                                     color = MaterialTheme.colorScheme.secondary,
                                 )
                                 Text(
-                                    "Status pembayaran tercatat LUNAS, tetapi nominal belum didapat dari sumber yang tervalidasi. RPTAG dan total tidak ditampilkan agar tidak dianggap Rp0.",
+                                    "${if (data.status.equals("PAID", ignoreCase = true)) "Status pembayaran tercatat LUNAS, tetapi nominal belum didapat dari sumber yang tervalidasi." else "Nominal tagihan belum didapat dari sumber yang tervalidasi."} RPTAG dan total tidak ditampilkan agar tidak dianggap Rp0.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
