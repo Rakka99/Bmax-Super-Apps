@@ -95,7 +95,7 @@ object InvoicePrinter {
                 $penaltyRow
                 <tr><td class="total">TOTAL</td><td class="money total">${if (nominalAvailable) money(invoice.invoiceTotal!!) else "Nominal belum tersedia"}</td></tr>
               </table>
-              ${if (!nominalAvailable) "<div class=\"note\"><strong>Nominal belum tersedia.</strong> Status pembayaran LUNAS telah terkonfirmasi, tetapi nominal belum didapat dari sumber tervalidasi. Total tidak ditampilkan sebagai Rp0.</div>" else ""}
+              ${if (!nominalAvailable) "<div class=\"note\"><strong>Nominal belum tersedia.</strong> ${if (invoice.status.equals("PAID", true)) "Status pembayaran LUNAS telah terkonfirmasi." else "Status pembayaran belum lunas."} Nominal belum didapat dari sumber tervalidasi. Total tidak ditampilkan sebagai Rp0.</div>" else ""}
               <div class="note">Stand meter berasal dari data inquiry PLN Postpaid PituCode. Nilai ini hanya informasi meter dan tidak mengubah RPTAG, admin, denda, atau status tagihan.</div>
             </body>
             </html>
