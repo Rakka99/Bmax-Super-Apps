@@ -41,12 +41,14 @@ object InvoicePrinter {
 
     private fun buildHtml(customer: CustomerDto, invoice: InvoiceDisplayDto): String {
         val standMeter = invoice.standMeter?.trim()?.takeIf { it.isNotEmpty() } ?: "-"
+        val nominalAvailable = invoice.nominalStatus.equals("AVAILABLE", ignoreCase = true) &&
+            invoice.rptagPln != null && invoice.invoiceTotal != null
         val admin = invoice.adminPln
         val penalty = invoice.penalty
-        val adminRow = if (admin > 0) {
+        val adminRow = if (nominalAvailable && admin > 0) {
             "<tr><td>Admin PLN</td><td class='money'>${money(admin)}</td></tr>"
         } else ""
-        val penaltyRow = if (penalty > 0) {
+        val penaltyRow = if (nominalAvailable && penalty > 0) {
             "<tr><td>Denda</td><td class='money'>${money(penalty)}</td></tr>"
         } else ""
 
@@ -83,16 +85,17 @@ object InvoicePrinter {
                 <tr><td>Tarif / Daya</td><td>${escape(customer.tariff ?: "-")} / ${customer.powerVa ?: 0} VA</td></tr>
                 <tr><td>Periode</td><td>${escape(invoice.period)}</td></tr>
                 <tr><td>Kategori</td><td>${escape(invoice.category)}</td></tr>
-                <tr><td>Status</td><td>${escape(invoice.status)}</td></tr>
+                <tr><td>Status</td><td>${if (invoice.status.equals("PAID", true)) "LUNAS" else "BELUM LUNAS"}</td></tr>
                 <tr><td>Stand Meter</td><td class="stand">${escape(standMeter)}</td></tr>
               </table>
               <h1>RINCIAN TAGIHAN</h1>
               <table>
-                <tr><td>RPTAG PLN</td><td class="money">${money(invoice.rptagPln)}</td></tr>
+                <tr><td>RPTAG PLN</td><td class="money">${if (nominalAvailable) money(invoice.rptagPln!!) else "Nominal belum tersedia"}</td></tr>
                 $adminRow
                 $penaltyRow
-                <tr><td class="total">TOTAL</td><td class="money total">${money(invoice.invoiceTotal)}</td></tr>
+                <tr><td class="total">TOTAL</td><td class="money total">${if (nominalAvailable) money(invoice.invoiceTotal!!) else "Nominal belum tersedia"}</td></tr>
               </table>
+              ${if (!nominalAvailable) "<div class=\"note\"><strong>Nominal belum tersedia.</strong> ${if (invoice.status.equals("PAID", true)) "Status pembayaran LUNAS telah terkonfirmasi." else "Status pembayaran belum lunas."} Nominal belum didapat dari sumber tervalidasi. Total tidak ditampilkan sebagai Rp0.</div>" else ""}
               <div class="note">Stand meter berasal dari data inquiry PLN Postpaid PituCode. Nilai ini hanya informasi meter dan tidak mengubah RPTAG, admin, denda, atau status tagihan.</div>
             </body>
             </html>
