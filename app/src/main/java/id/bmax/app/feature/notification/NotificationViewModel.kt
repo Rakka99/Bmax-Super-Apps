@@ -7,8 +7,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.RealtimeChannel
-import io.github.jan.supabase.realtime.postgres.PostgresAction
+import io.github.jan.supabase.realtime.decodeRecord
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -123,7 +127,7 @@ class NotificationViewModel @Inject constructor(
             supabase.from("user_notifications")
                 .select {
                     filter { eq("user_id", userId) }
-                    order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                    order("created_at", Order.DESCENDING)
                     limit(50)
                 }
                 .decodeList<UserNotificationDto>()
