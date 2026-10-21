@@ -5,6 +5,8 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 
 @Serializable
@@ -57,11 +59,14 @@ class CustomerRepository @Inject constructor(
         val pageSize = 100
 
         while (true) {
-            val page = supabase.postgrest.rpc("search_operational_customers") {
-                parameter("p_query", "")
-                parameter("p_limit", pageSize)
-                parameter("p_offset", offset)
-            }.decodeList<OperationalCustomerRow>()
+            val page = supabase.postgrest.rpc(
+                function = "search_operational_customers",
+                parameters = buildJsonObject {
+                    put("p_query", "")
+                    put("p_limit", pageSize)
+                    put("p_offset", offset)
+                },
+            ).decodeList<OperationalCustomerRow>()
 
             if (page.isEmpty()) break
 
