@@ -4,6 +4,8 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 
 @Serializable
@@ -47,7 +49,8 @@ class DashboardRepository @Inject constructor(
         supabase.postgrest.rpc("get_operational_dashboard_stats").decodeSingle()
 
     suspend fun getCategoryStatus(period: String): List<CategoryStatusDto> =
-        supabase.postgrest.rpc("get_operational_category_status") {
-            parameter("p_period", period)
-        }.decodeList()
+        supabase.postgrest.rpc(
+            function = "get_operational_category_status",
+            parameters = buildJsonObject { put("p_period", period) },
+        ).decodeList()
 }
