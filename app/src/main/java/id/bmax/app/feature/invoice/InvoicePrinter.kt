@@ -41,13 +41,16 @@ object InvoicePrinter {
 
     private fun buildHtml(customer: CustomerDto, invoice: InvoiceDisplayDto): String {
         val standMeter = invoice.standMeter?.trim()?.takeIf { it.isNotEmpty() } ?: "-"
-        val admin = invoice.adminPln
-        val penalty = invoice.penalty
+        val admin = invoice.adminPln.coerceAtLeast(0L)
+        val penalty = invoice.penalty.coerceAtLeast(0L)
         val adminRow = if (admin > 0) {
-            "<tr><td>Admin PLN</td><td class='money'>${money(admin)}</td></tr>"
+            "<tr><td>Admin Bank</td><td class='money'>${money(admin)}</td></tr>"
         } else ""
-        val penaltyRow = if (penalty > 0) {
-            "<tr><td>Denda</td><td class='money'>${money(penalty)}</td></tr>"
+        val showPenalty = penalty > 0 ||
+            (invoice.category.equals("KOREKTIF", ignoreCase = true) &&
+                invoice.status.equals("UNPAID", ignoreCase = true))
+        val penaltyRow = if (showPenalty) {
+            "<tr><td>DENDA PLN</td><td class='money'>${money(penalty)}</td></tr>"
         } else ""
 
         return """
@@ -88,12 +91,12 @@ object InvoicePrinter {
               </table>
               <h1>RINCIAN TAGIHAN</h1>
               <table>
-                <tr><td>RPTAG PLN</td><td class="money">${money(invoice.rptagPln)}</td></tr>
+                <tr><td>RPTAG PLN</td><td class="money">${money(invoice.rptagPln.coerceAtLeast(0L))}</td></tr>
                 $adminRow
                 $penaltyRow
-                <tr><td class="total">TOTAL</td><td class="money total">${money(invoice.invoiceTotal)}</td></tr>
+                <tr><td class="total">TOTAL BAYAR</td><td class="money total">${money(invoice.payableTotal)}</td></tr>
               </table>
-              <div class="note">Stand meter berasal dari data inquiry PLN Postpaid PituCode. Nilai ini hanya informasi meter dan tidak mengubah RPTAG, admin, denda, atau status tagihan.</div>
+              <div class="note">Denda ditampilkan terpisah dari RPTAG PLN. Total disusun dari RPTAG + Admin Bank (jika ada) + Denda yang sudah tersimpan pada hasil inquiry dan billing. Ini adalah rincian tagihan; status pembayaran tetap mengikuti data billing.</div>
             </body>
             </html>
         """.trimIndent()

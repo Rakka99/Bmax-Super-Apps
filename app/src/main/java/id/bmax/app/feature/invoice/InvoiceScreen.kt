@@ -135,12 +135,19 @@ fun InvoiceScreen(
                 item {
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("RINCIAN", style = MaterialTheme.typography.titleMedium)
+                            Text("RINCIAN TAGIHAN", style = MaterialTheme.typography.titleMedium)
                             InvoiceAmountRow("RPTAG PLN", data.rptagPln)
-                            if (data.adminPln > 0) InvoiceAmountRow("Admin PLN", data.adminPln)
-                            if (data.penalty > 0) InvoiceAmountRow("Denda", data.penalty)
+                            if (data.adminPln > 0) InvoiceAmountRow("Admin Bank", data.adminPln)
+
+                            // Korektif-unpaid harus tetap menampilkan baris DENDA walaupun nilai dari API 0,
+                            // agar anomali tarif tidak tersembunyi; denda aktual tidak dihitung di Android.
+                            val showPenalty = data.penalty > 0 ||
+                                (data.category.equals("KOREKTIF", ignoreCase = true) &&
+                                    data.status.equals("UNPAID", ignoreCase = true))
+                            if (showPenalty) InvoiceAmountRow("DENDA PLN", data.penalty.coerceAtLeast(0L))
+
                             HorizontalDivider()
-                            InvoiceAmountRow("TOTAL", data.invoiceTotal, emphasize = true)
+                            InvoiceAmountRow("TOTAL BAYAR", data.payableTotal, emphasize = true)
                         }
                     }
                 }
