@@ -2,7 +2,6 @@ package id.bmax.app.feature.invoice
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.filter.eq
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -26,9 +25,8 @@ data class InvoiceDisplayDto(
 ) {
     /**
      * Recompose the customer-facing total from the invoice rows.
-     * This prevents a stale/generated database total from hiding the late fee.
-     * For IRISAN, the invoice view already exposes the current plus prior unpaid
-     * penalties in [penalty], so the same total formula applies.
+     * This prevents a generated database total that omits penalty from hiding
+     * the stored late fee. Android never calculates a new fee or changes billing.
      */
     val payableTotal: Long
         get() = rptagPln.coerceAtLeast(0L) +
@@ -42,10 +40,13 @@ class InvoiceRepository @Inject constructor(
     suspend fun getInvoice(idpel: String, period: String): InvoiceDisplayDto? {
         return supabase.postgrest
             .from("invoice_billing_display")
-            .select()
-            .eq("idpel", idpel)
-            .eq("billing_period", period)
-            .limit(1)
+            .select {
+                filter {
+                    eq("idpel", idpel)
+                    eq("billing_period", period)
+                }
+                limit(1)
+            }
             .decodeList<InvoiceDisplayDto>()
             .firstOrNull()
     }
