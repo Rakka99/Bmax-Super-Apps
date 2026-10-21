@@ -8,8 +8,10 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
@@ -79,7 +81,7 @@ class NotificationViewModel @Inject constructor(
             val changeFlow = realtimeChannel
                 .postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
                     table = "user_notifications"
-                    filter = "user_id=eq.$userId"
+                    filter("user_id", FilterOperator.EQ, userId)
                 }
 
             listenJob = viewModelScope.launch {
