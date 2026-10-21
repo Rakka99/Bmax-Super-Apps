@@ -1,6 +1,7 @@
 package id.bmax.app.feature.invoice
 
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -21,7 +22,18 @@ data class InvoiceDisplayDto(
     @SerialName("biller_id") val billerId: String? = null,
     @SerialName("stand_meter") val standMeter: String? = null,
     @SerialName("billing_period") val billingPeriod: String? = null,
-)
+) {
+    /**
+     * Recompose the customer-facing total from the invoice rows.
+     * This prevents a stale/generated database total from hiding the late fee.
+     * For IRISAN, the invoice view already exposes the current plus prior unpaid
+     * penalties in [penalty], so the same total formula applies.
+     */
+    val payableTotal: Long
+        get() = rptagPln.coerceAtLeast(0L) +
+            adminPln.coerceAtLeast(0L) +
+            penalty.coerceAtLeast(0L)
+}
 
 class InvoiceRepository @Inject constructor(
     private val supabase: SupabaseClient,
